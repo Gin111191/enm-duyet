@@ -33,6 +33,12 @@ h2{font-size:15px;margin:20px 4px 8px}
 #gate button{margin-top:14px;padding:12px 30px;border-radius:12px;border:none;background:#b0836b;color:#fff;font-weight:700}
 .muted{color:#988b7e;font-size:12.5px;margin:6px 4px}
 .money{font-weight:700;color:#7a5c2e}
+#lb{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(25,18,12,.93);display:none;z-index:60;align-items:center;justify-content:center;flex-direction:column}
+#lb.on{display:flex}
+#lb img{max-width:96vw;max-height:88vh;border-radius:10px;box-shadow:0 6px 40px rgba(0,0,0,.5)}
+#lb .lbx{color:#fff;font-size:15px;margin-top:12px;opacity:.85}
+#lb .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:34px;color:#fff;opacity:.7;padding:20px;user-select:none}
+#lb .prev{left:0}#lb .next{right:0}
 </style></head><body>
 <header><span>☁️ Êm Như Mây · Duyệt bài</span><button onclick="refresh()">↻ Làm mới</button></header>
 <div id="gate"><p>Nhập mã PIN</p><input id="pin" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
@@ -46,6 +52,7 @@ h2{font-size:15px;margin:20px 4px 8px}
 <section><h2>⚠️ Lỗi / Đã bỏ</h2><div id="gOther"></div></section>
 <section><h2>💰 Ads — duyệt = máy chỉ DỰNG NHÁP TẮT; bật chạy = Gin bấm tay trong Ads Manager</h2><div id="gAds"></div></section>
 </main>
+<div id="lb" onclick="closeLB()"><span class="nav prev" onclick="event.stopPropagation();stepLB(-1)">‹</span><img id="lbimg" src="" alt=""><span class="nav next" onclick="event.stopPropagation();stepLB(1)">›</span><div class="lbx">chạm để đóng · ‹ › chuyển ảnh</div></div>
 <script>
 var API = 'https://hxucribafqcxsybovgmc.supabase.co/functions/v1/autopub-review';
 var PIN = sessionStorage.getItem('enm_pin') || '';
@@ -70,12 +77,23 @@ function approveAll(){ if(!confirm('Duyệt TẤT CẢ mục đang chờ? Sau b�
   api({action:'approve_all'}).then(function(j){ if (j.error) alert('Lỗi: ' + j.error); refresh(); }); }
 function toggleCap(btn){ var c = btn.previousElementSibling; c.classList.toggle('open');
   btn.textContent = c.classList.contains('open') ? 'thu gọn ▴' : 'xem hết ▾'; }
+var LBLIST = [], LBIDX = 0;
+function openLB(urls, idx){ LBLIST = urls.split('|'); LBIDX = idx;
+  document.getElementById('lbimg').src = LBLIST[LBIDX];
+  document.getElementById('lb').classList.add('on'); }
+function closeLB(){ document.getElementById('lb').classList.remove('on'); document.getElementById('lbimg').src = ''; }
+function stepLB(d){ LBIDX = (LBIDX + d + LBLIST.length) % LBLIST.length;
+  document.getElementById('lbimg').src = LBLIST[LBIDX]; }
 function mediaHtml(list){ var h = '<div class="imgs">';
-  (list || []).forEach(function(m){
+  var urls = (list || []).map(function(m){ return m.url; }).join('|');
+  (list || []).forEach(function(m, i){
     var img = m.thumb_url || m.url;
-    h += '<a href="' + esc(m.url) + '" target="_blank"><img src="' + esc(img) + '" loading="lazy">';
-    if ((m.kind || '') === 'video') h += '<span class="play">▶</span>';
-    h += '</a>'; });
+    if ((m.kind || '') === 'video'){
+      h += '<a href="' + esc(m.url) + '" target="_blank"><img src="' + esc(img) + '" loading="lazy"><span class="play">▶</span></a>';
+    } else {
+      h += '<a href="javascript:void(0)" onclick="openLB(\'' + esc(urls) + '\',' + i + ')"><img src="' + esc(img) + '" loading="lazy"></a>';
+    }
+  });
   return h + '</div>'; }
 function btnsHtml(kind, p){ var s = p.status, h = '<div class="btns">';
   function bt(cls, dec, txt){ return '<button class="' + cls + '" onclick="decide(\'' + kind + '\',' + p.id + ',\'' + dec + '\')">' + txt + '</button>'; }
