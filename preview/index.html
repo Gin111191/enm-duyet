@@ -97,6 +97,28 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 /* mã bài (B11…) + nút hiện/ẩn bài đã đăng */
 .bcode{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:11.5px;color:#fff;background:var(--brown);border-radius:6px;padding:1px 7px;letter-spacing:.3px}
 .pubtoggle{border:1px solid var(--line);background:var(--warm);color:var(--brown);border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-left:8px}
+/* preview WYSIWYG: hiển thị giống layout thật FB/IG để duyệt */
+.fv{margin:10px 0 4px}
+.fvlab{font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600}
+.collage{display:grid;gap:3px;border-radius:11px;overflow:hidden;border:1px solid var(--line);max-width:360px;background:#eee}
+.collage .c{background-size:cover;background-position:center;background-color:#efe7da;position:relative;min-height:0;cursor:zoom-in}
+.collage.n1{grid-template-columns:1fr}.collage.n1 .c{aspect-ratio:4/5}
+.collage.n2{grid-template-columns:1fr 1fr;aspect-ratio:1.9/1}
+.collage.n3{grid-template-columns:1.45fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:4/5}
+.collage.n3 .c:first-child{grid-row:1/3}
+.collage.n3.land{grid-template-columns:1fr 1fr;grid-template-rows:1.5fr 1fr;aspect-ratio:1.3/1}
+.collage.n3.land .c:first-child{grid-row:1;grid-column:1/3}
+.collage.n4{grid-template-columns:1.5fr 1fr;grid-template-rows:repeat(3,1fr);aspect-ratio:4/5}
+.collage.n4 .c:first-child{grid-row:1/4}
+.collage.n4.land{grid-template-columns:repeat(3,1fr);grid-template-rows:1.5fr 1fr;aspect-ratio:1.3/1}
+.collage.n4.land .c:first-child{grid-row:1;grid-column:1/4}
+.collage .more{position:absolute;inset:0;background:rgba(30,20,12,.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.igcover{max-width:300px;border-radius:11px;overflow:hidden;border:1px solid var(--line)}
+.igcover .cv{aspect-ratio:4/5;background-size:cover;background-position:center;background-color:#efe7da;cursor:zoom-in;position:relative}
+.igcover .multi{position:absolute;top:8px;right:8px;color:#fff;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.dots{display:flex;gap:5px;justify-content:center;padding:7px 0;background:#fff}
+.dots i{width:6px;height:6px;border-radius:50%;background:#d8cbb8;display:block}
+.dots i.on{background:var(--brown)}
 .frow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .copy{background:var(--brown);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13.5px;font-weight:600;cursor:pointer;min-height:40px}
 .copy.done{background:#4b7a4e}
@@ -291,6 +313,37 @@ function togglePub(ch){ SHOW_PUB[ch] = !SHOW_PUB[ch]; if(ch==='ig') renderIG(); 
 function canEditMedia(p){ return EDITABLE_UI.indexOf(p.status)>=0 && IMG_FMT.indexOf(p.format)>=0; }
 function reRenderFor(p){ if(p.channel==='ig') renderIG(); else renderFB(); }
 
+/* preview WYSIWYG giống layout THẬT của FB/IG — để duyệt cho dễ (chạm để phóng to) */
+function feedPreview(p){
+  var media=p.media||[];
+  if(!media.length || IMG_FMT.indexOf(p.format)<0) return '';
+  var key='fv'+p.id; LBSETS[key]=media.map(function(m){ return m.url; });
+  if(p.channel==='ig'){
+    var url0=media[0].thumb_url||media[0].url, dots='';
+    if(media.length>1){ dots='<div class="dots">'; for(var i=0;i<Math.min(media.length,10);i++) dots+='<i'+(i===0?' class="on"':'')+'></i>'; dots+='</div>'; }
+    return '<div class="fv"><div class="fvlab">📱 Xem như trên Instagram'+(media.length>1?' · '+media.length+' ảnh (vuốt để xem tiếp)':'')+'</div>'
+      + '<div class="igcover"><div class="cv" data-lb="'+key+'" data-lbi="0" style="background-image:url(\''+esc(url0)+'\')">'+(media.length>1?'<span class="multi">▤</span>':'')+'</div>'+dots+'</div></div>';
+  }
+  var n=media.length, show=Math.min(n,4), cells='';
+  for(var i=0;i<show;i++){
+    var u=media[i].thumb_url||media[i].url;
+    var ov=(i===show-1 && n>show)?'<div class="more">+'+(n-show)+'</div>':'';
+    cells+='<div class="c" data-lb="'+key+'" data-lbi="'+i+'" style="background-image:url(\''+esc(u)+'\')">'+ov+'</div>';
+  }
+  return '<div class="fv"><div class="fvlab">📘 Xem như trên Facebook · '+n+' ảnh</div>'
+    + '<div class="collage n'+show+'" data-first="'+esc(media[0].thumb_url||media[0].url)+'">'+cells+'</div></div>';
+}
+/* đo ảnh đầu: NGANG → đổi collage sang kiểu "1 lớn trên + nhỏ dưới" cho khớp FB thật */
+function measureCollages(){
+  var els=document.querySelectorAll('.collage[data-first]');
+  for(var i=0;i<els.length;i++){ (function(el){
+    var u=el.getAttribute('data-first'); if(!u) return;
+    var im=new Image();
+    im.onload=function(){ if(im.naturalWidth > im.naturalHeight*1.05) el.classList.add('land'); };
+    im.src=u;
+  })(els[i]); }
+}
+
 function setMedia(id, media, expected){ return api({action:'set_media', id:id, media:media, expected_updated_at:expected}); }
 function addMediaApi(id, b64, expected){ return api({action:'add_media', id:id, content_base64:b64, expected_updated_at:expected}); }
 
@@ -431,6 +484,7 @@ function igCard(p){
     + '<span class="tm">'+esc(fmtTime(p.scheduled_at))+'</span>'
     + chip(p.status)
     + '<span class="id">#'+p.id+'</span></div>'
+    + feedPreview(p)
     + (canEditMedia(p) ? mediaEditor(p,'ig'+p.id,false) : thumbStrip(p.media,'ig'+p.id))
     + '<div class="cap">'+esc(p.caption)+'</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
   if(p.first_comment_text) h+='<div class="fc">💬 comment bảng size — máy tự gắn sau khi đăng</div>';
@@ -454,7 +508,7 @@ function renderIG(){
   if(other.length){ h+='<div class="sech">⚠️ Lỗi / Đang sửa / Đã bỏ</div>'+other.map(igCard).join(''); }
   h+='<div class="sech">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="ig">'+(SHOW_PUB.ig?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_PUB.ig) h+= pub.length ? pub.slice(0,50).map(igCard).join('') : '<div class="empty">Chưa có.</div>';
-  host.innerHTML=h;
+  host.innerHTML=h; measureCollages();
 }
 
 /* ============ PLANNER FB ============ */
@@ -475,7 +529,8 @@ function fbCard(p){
       + '<div class="frow"><button class="copy" data-copy="cap" data-pid="'+p.id+'">📋 Copy caption</button>'
       + '<span class="sub">'+media.length+' ảnh — chạm để phóng to, ⬇ để tải</span></div>';
   }
-  // ảnh — sửa được (sắp/xóa/thêm) hay chỉ xem (story / bài không sửa được)
+  // preview giống FB thật + editor ảnh (sắp/xóa/thêm)
+  h+= feedPreview(p);
   h+= canEditMedia(p) ? mediaEditor(p,key,false) : mediaEditor(p,key,true);
   if(!isStory && p.first_comment_text){
     h+='<div class="cmt"><div class="lbl">💬 Bình luận đầu (đăng sau khi bài lên, kèm ảnh bảng size):</div>'
@@ -509,7 +564,7 @@ function renderFB(){
   }
   h+='<div class="dayhdr">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="fb">'+(SHOW_PUB.fb?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_PUB.fb && pub.length) h+= pub.slice(0,50).map(fbCard).join('');
-  host.innerHTML=h;
+  host.innerHTML=h; measureCollages();
 }
 
 /* ============ ADS ============ */
