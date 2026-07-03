@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Êm Như Mây — Duyệt bài</title>
+<style>
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#faf6f0;color:#3b3430;margin:0;padding-bottom:70px}
+header{position:sticky;top:0;z-index:5;background:#fffdf9;border-bottom:1px solid #e9ddcf;padding:12px 16px;font-weight:700;letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center}
+header button{border:none;background:#f1e7d8;border-radius:10px;padding:7px 12px;font-size:13px}
+main{max-width:640px;margin:0 auto;padding:12px}
+h2{font-size:15px;margin:20px 4px 8px}
+.card{background:#fff;border:1px solid #eadfd2;border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:#8a7f74}
+.chip{border-radius:20px;padding:2px 9px;font-size:11.5px;font-weight:700;color:#fff}
+.chip.fb{background:#1877f2}.chip.ig{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}
+.time{font-weight:700;color:#3b3430;font-size:14px}
+.imgs{display:flex;gap:6px;overflow-x:auto;margin:10px 0}
+.imgs a{flex:0 0 auto;position:relative}
+.imgs img{width:104px;height:104px;object-fit:cover;border-radius:10px;border:1px solid #eee;display:block}
+.play{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.cap{white-space:pre-wrap;font-size:13.5px;line-height:1.45;max-height:110px;overflow:hidden}
+.cap.open{max-height:none}
+.more{color:#b0836b;font-size:12.5px;background:none;border:none;padding:4px 0}
+.fc{font-size:12px;color:#8a7f74;margin-top:6px}
+.note{background:#fdf3e3;border-radius:8px;padding:8px;font-size:12.5px;margin-top:8px}
+.err{background:#fdeaea;border-radius:8px;padding:8px;font-size:12.5px;margin-top:8px;color:#a33}
+.btns{display:flex;gap:8px;margin-top:10px}
+.btns button{flex:1;border:none;border-radius:10px;padding:11px 0;font-size:14px;font-weight:700}
+.ok{background:#3d8b57;color:#fff}.no{background:#f0e4e0;color:#a33}.ed{background:#f5ead7;color:#7a5c2e}.back{background:#eee;color:#555}
+#btnAll{width:100%;padding:12px;border-radius:12px;border:1px dashed #3d8b57;background:#eef7f0;color:#2c6b42;font-weight:700;margin:4px 0 8px}
+.stat{font-size:12px;font-weight:700;color:#8a7f74}
+#gate{max-width:320px;margin:80px auto;text-align:center}
+#gate input{font-size:26px;letter-spacing:8px;text-align:center;width:200px;padding:10px;border:1px solid #d8c9b8;border-radius:12px}
+#gate button{margin-top:14px;padding:12px 30px;border-radius:12px;border:none;background:#b0836b;color:#fff;font-weight:700}
+.muted{color:#988b7e;font-size:12.5px;margin:6px 4px}
+.money{font-weight:700;color:#7a5c2e}
+#lb{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(25,18,12,.93);display:none;z-index:60;align-items:center;justify-content:center;flex-direction:column}
+#lb.on{display:flex}
+#lb img{max-width:96vw;max-height:88vh;border-radius:10px;box-shadow:0 6px 40px rgba(0,0,0,.5)}
+#lb .lbx{color:#fff;font-size:15px;margin-top:12px;opacity:.85}
+#lb .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:34px;color:#fff;opacity:.7;padding:20px;user-select:none}
+#lb .prev{left:0}#lb .next{right:0}
+</style></head><body>
+<header><span>☁️ Êm Như Mây · Duyệt bài</span><button onclick="refresh()">↻ Làm mới</button></header>
+<div id="gate"><p>Nhập mã PIN</p><input id="pin" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+<br><button onclick="enter()">Vào</button><p id="gerr" style="color:#a33"></p></div>
+<main id="app" hidden>
+<div class="muted" id="sum"></div>
+<section><h2>⏳ Chờ Gin duyệt</h2><button id="btnAll" onclick="approveAll()" hidden>✅ Duyệt tất cả mục chờ</button><div id="gPending"></div></section>
+<section><h2>✏️ Đang sửa lại (đội đang xử theo ghi chú)</h2><div id="gEditing"></div></section>
+<section><h2>🕒 Sắp đăng (đã duyệt — máy tự lo)</h2><div id="gUpcoming"></div></section>
+<section><h2>📤 Đã đăng gần đây</h2><div id="gDone"></div></section>
+<section><h2>⚠️ Lỗi / Đã bỏ</h2><div id="gOther"></div></section>
+<section><h2>💰 Ads — duyệt = máy chỉ DỰNG NHÁP TẮT; bật chạy = Gin bấm tay trong Ads Manager</h2><div id="gAds"></div></section>
+</main>
+<div id="lb" onclick="closeLB()"><span class="nav prev" onclick="event.stopPropagation();stepLB(-1)">‹</span><img id="lbimg" src="" alt=""><span class="nav next" onclick="event.stopPropagation();stepLB(1)">›</span><div class="lbx">chạm để đóng · ‹ › chuyển ảnh</div></div>
+<script>
+var API = 'https://hxucribafqcxsybovgmc.supabase.co/functions/v1/autopub-review';
+var PIN = sessionStorage.getItem('enm_pin') || '';
+var LBL = {pending:'⏳ chờ duyệt', approved:'✅ đã duyệt — chờ tới giờ', fb_scheduled:'🕒 đã vào lịch Meta', publishing:'🚀 đang đăng…', published:'📤 đã đăng', failed:'⚠️ lỗi', rejected:'❌ đã bỏ', needs_edit:'✏️ chờ sửa', created_paused:'💤 nháp TẮT đã dựng', activated_by_owner:'▶️ Gin đã bật'};
+var FMT = {photo:'Ảnh', multi_photo:'Nhiều ảnh', reel:'Reel', story:'Story'};
+function api(body){ body.pin = PIN;
+  return fetch(API, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
+    .then(function(r){ return r.json().then(function(j){ j._s = r.status; return j; }); }); }
+function fmtTime(iso){ var d = new Date(iso);
+  return d.toLocaleString('vi-VN', {timeZone:'Asia/Ho_Chi_Minh', weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); }
+function money(n){ return (Number(n)||0).toLocaleString('vi-VN') + 'đ'; }
+function esc(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+function enter(){ PIN = document.getElementById('pin').value.trim(); refresh(); }
+function decide(kind, id, dec){
+  var note = '';
+  if (dec === 'needs_edit'){ note = prompt('Muốn sửa gì? Ghi rõ để đội làm đúng:'); if (note == null || !note.trim()) return; }
+  if (dec === 'rejected' && !confirm('Bỏ mục này?')) return;
+  api({action:'decide', kind:kind, id:id, decision:dec, note:note}).then(function(j){
+    if (j.error) alert('Lỗi: ' + j.error); refresh(); });
+}
+function approveAll(){ if(!confirm('Duyệt TẤT CẢ mục đang chờ? Sau bước này máy sẽ tự đăng đúng giờ.')) return;
+  api({action:'approve_all'}).then(function(j){ if (j.error) alert('Lỗi: ' + j.error); refresh(); }); }
+function toggleCap(btn){ var c = btn.previousElementSibling; c.classList.toggle('open');
+  btn.textContent = c.classList.contains('open') ? 'thu gọn ▴' : 'xem hết ▾'; }
+var LBLIST = [], LBIDX = 0;
+function openLB(urls, idx){ LBLIST = urls.split('|'); LBIDX = idx;
+  document.getElementById('lbimg').src = LBLIST[LBIDX];
+  document.getElementById('lb').classList.add('on'); }
+function closeLB(){ document.getElementById('lb').classList.remove('on'); document.getElementById('lbimg').src = ''; }
+function stepLB(d){ LBIDX = (LBIDX + d + LBLIST.length) % LBLIST.length;
+  document.getElementById('lbimg').src = LBLIST[LBIDX]; }
+function mediaHtml(list){ var h = '<div class="imgs">';
+  var urls = (list || []).map(function(m){ return m.url; }).join('|');
+  (list || []).forEach(function(m, i){
+    var img = m.thumb_url || m.url;
+    if ((m.kind || '') === 'video'){
+      h += '<a href="' + esc(m.url) + '" target="_blank"><img src="' + esc(img) + '" loading="lazy"><span class="play">▶</span></a>';
+    } else {
+      h += '<a href="javascript:void(0)" onclick="openLB(\'' + esc(urls) + '\',' + i + ')"><img src="' + esc(img) + '" loading="lazy"></a>';
+    }
+  });
+  return h + '</div>'; }
+function btnsHtml(kind, p){ var s = p.status, h = '<div class="btns">';
+  function bt(cls, dec, txt){ return '<button class="' + cls + '" onclick="decide(\'' + kind + '\',' + p.id + ',\'' + dec + '\')">' + txt + '</button>'; }
+  if (s === 'pending') h += bt('ok','approved','✅ Duyệt') + bt('ed','needs_edit','✏️ Sửa') + bt('no','rejected','❌ Bỏ');
+  else if (s === 'needs_edit') h += bt('ok','approved','✅ Duyệt luôn') + bt('no','rejected','❌ Bỏ');
+  else if (s === 'approved') h += bt('back','pending','↩︎ Rút duyệt') + bt('ed','needs_edit','✏️ Sửa') + bt('no','rejected','❌ Bỏ');
+  else if (s === 'fb_scheduled') h += bt('no','rejected','❌ Hủy đăng (gỡ khỏi lịch)');
+  else if (s === 'failed') h += bt('ok','approved','🔁 Thử lại') + bt('no','rejected','❌ Bỏ');
+  else if (s === 'rejected') h += bt('back','pending','↩︎ Khôi phục về chờ duyệt');
+  else if (s === 'created_paused' && kind === 'ad') h += bt('ok','activated_by_owner','▶️ Tôi đã bật tay') + bt('no','rejected','❌ Bỏ');
+  h += '</div>'; return (s === 'publishing' || s === 'published' || s === 'activated_by_owner') ? '' : h; }
+function postCard(p){
+  var h = '<div class="card"><div class="meta"><span class="chip ' + p.channel + '">' + p.channel.toUpperCase() + '</span>'
+    + '<span>' + (FMT[p.format] || p.format) + '</span><span class="time">' + fmtTime(p.scheduled_at) + '</span>'
+    + '<span class="stat">' + (LBL[p.status] || p.status) + '</span><span>#' + p.id + '</span></div>'
+    + mediaHtml(p.media)
+    + '<div class="cap">' + esc(p.caption) + '</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
+  if (p.first_comment_text || p.first_comment_photo_url)
+    h += '<div class="fc">💬 Comment kèm sau khi đăng: ' + esc(p.first_comment_text || '') + (p.first_comment_photo_url ? ' (+ảnh)' : '') + '</div>';
+  if (p.status === 'needs_edit' && p.edit_note) h += '<div class="note">✏️ Gin yêu cầu: ' + esc(p.edit_note) + '</div>';
+  if (p.error) h += '<div class="err">' + esc(p.error) + '</div>';
+  return h + btnsHtml('post', p) + '</div>'; }
+function adCard(a){
+  var cr = a.creative || {};
+  var h = '<div class="card"><div class="meta"><span class="chip fb">ADS</span><span class="time">' + esc(a.name) + '</span>'
+    + '<span class="stat">' + (LBL[a.status] || a.status) + '</span><span>#' + a.id + '</span></div>';
+  if (cr.image_url) h += mediaHtml([{url: cr.image_url}]);
+  h += '<div class="cap">Mục tiêu: ' + esc(a.objective || '—') + '\nĐối tượng: ' + esc(a.audience || '—')
+    + '\nNgân sách: ' + money(a.budget_vnd) + '/ngày\nLịch: ' + esc(a.schedule_note || '—')
+    + (cr.primary_text ? '\n\nNội dung: ' + esc(cr.primary_text) : '') + '</div>';
+  if (a.status === 'needs_edit' && a.edit_note) h += '<div class="note">✏️ Gin yêu cầu: ' + esc(a.edit_note) + '</div>';
+  if (a.error) h += '<div class="err">' + esc(a.error) + '</div>';
+  return h + btnsHtml('ad', a) + '</div>'; }
+function put(id, rows, mk, emptyMsg){ var el = document.getElementById(id);
+  el.innerHTML = rows.length ? rows.map(mk).join('') : '<div class="muted">' + emptyMsg + '</div>'; }
+function refresh(){
+  api({action:'list'}).then(function(j){
+    if (j._s === 401){ document.getElementById('gerr').textContent = 'PIN sai.'; sessionStorage.removeItem('enm_pin'); return; }
+    if (j._s === 429){ document.getElementById('gerr').textContent = 'Sai nhiều lần — khóa 15 phút.'; return; }
+    if (j.error){ alert(j.error); return; }
+    sessionStorage.setItem('enm_pin', PIN);
+    document.getElementById('gate').hidden = true; document.getElementById('app').hidden = false;
+    var P = j.posts, A = j.ads;
+    var pending = P.filter(function(p){ return p.status === 'pending'; });
+    put('gPending', pending, postCard, 'Không có gì chờ duyệt.');
+    document.getElementById('btnAll').hidden = pending.length < 2;
+    put('gEditing', P.filter(function(p){ return p.status === 'needs_edit'; }), postCard, 'Trống.');
+    put('gUpcoming', P.filter(function(p){ return ['approved','fb_scheduled','publishing'].indexOf(p.status) >= 0; }), postCard, 'Trống.');
+    put('gDone', P.filter(function(p){ return p.status === 'published'; }).slice(-10).reverse(), postCard, 'Chưa có.');
+    put('gOther', P.filter(function(p){ return p.status === 'failed' || p.status === 'rejected'; }).slice(-10), postCard, 'Trống.');
+    put('gAds', A, adCard, 'Chưa có ads nào chờ.');
+    var wait = pending.length + P.filter(function(p){ return p.status === 'needs_edit'; }).length;
+    document.getElementById('sum').textContent = 'Cập nhật ' + fmtTime(j.now) + ' · ' + wait + ' mục cần Gin · tự làm mới mỗi 60s';
+  });
+}
+if (PIN) refresh();
+setInterval(function(){ if (!document.getElementById('app').hidden) refresh(); }, 60000);
+</script></body></html>
