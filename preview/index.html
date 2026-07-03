@@ -94,6 +94,9 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .addp{flex:0 0 auto;width:112px;min-height:140px;border:1.5px dashed var(--brown2);background:var(--surf);color:var(--brown);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12.5px;font-weight:700;cursor:pointer;line-height:1.2}
 .addp span{font-size:26px;line-height:1}
 .addp:disabled{opacity:.4;cursor:default}
+/* mã bài (B11…) + nút hiện/ẩn bài đã đăng */
+.bcode{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:11.5px;color:#fff;background:var(--brown);border-radius:6px;padding:1px 7px;letter-spacing:.3px}
+.pubtoggle{border:1px solid var(--line);background:var(--warm);color:var(--brown);border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-left:8px}
 .frow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .copy{background:var(--brown);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13.5px;font-weight:600;cursor:pointer;min-height:40px}
 .copy.done{background:#4b7a4e}
@@ -282,6 +285,8 @@ var SAVING = {};      // SAVING[id]=true khi đang lưu (khóa thao tác chồng
 var UNDO = {};        // UNDO[id]=mảng ảnh trước đó (hoàn tác)
 var ADD_TARGET = null;
 var DRAG = null;
+var SHOW_PUB = {ig:false, fb:false};   // ẩn bài đã đăng mặc định (đỡ tốn tài nguyên); bấm mới hiện
+function togglePub(ch){ SHOW_PUB[ch] = !SHOW_PUB[ch]; if(ch==='ig') renderIG(); else renderFB(); }
 
 function canEditMedia(p){ return EDITABLE_UI.indexOf(p.status)>=0 && IMG_FMT.indexOf(p.format)>=0; }
 function reRenderFor(p){ if(p.channel==='ig') renderIG(); else renderFB(); }
@@ -392,13 +397,13 @@ function prepImage(file){
   return new Promise(function(resolve, reject){
     function draw(src, w, h){
       if(!w || !h){ reject(new Error('Ảnh không đọc được (HEIC?) — chọn ảnh JPEG.')); return; }
-      var max=1600, sc=Math.min(1, max/Math.max(w,h));
+      var max=2048, sc=Math.min(1, max/Math.max(w,h));   // giữ ảnh sắc (FB tới 2048; IG lấy nguồn tốt hơn)
       var cw=Math.max(1,Math.round(w*sc)), ch=Math.max(1,Math.round(h*sc));
       var cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
       var ctx=cv.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,cw,ch);
       try{ ctx.drawImage(src,0,0,cw,ch); }catch(e){ reject(new Error('Ảnh không vẽ được — chọn ảnh JPEG.')); return; }
       var durl;
-      try{ durl=cv.toDataURL('image/jpeg',0.85); }catch(e){ reject(new Error('Ảnh lỗi khi nén.')); return; }
+      try{ durl=cv.toDataURL('image/jpeg',0.92); }catch(e){ reject(new Error('Ảnh lỗi khi nén.')); return; }
       if(!durl || durl.length<200){ reject(new Error('Ảnh không đọc được — chọn ảnh JPEG.')); return; }
       resolve(durl);
     }
@@ -421,6 +426,7 @@ function prepImage(file){
 function igCard(p){
   var h='<div class="card"><div class="meta">'
     + '<span class="chchip ig">IG</span>'
+    + (p.batch?'<span class="bcode">'+esc(p.batch)+'</span>':'')
     + '<span class="fmt">'+esc(FMT[p.format]||p.format)+'</span>'
     + '<span class="tm">'+esc(fmtTime(p.scheduled_at))+'</span>'
     + chip(p.status)
@@ -445,9 +451,9 @@ function renderIG(){
   h+= pending.length ? pending.map(igCard).join('') : '<div class="empty">Không có bài IG chờ duyệt.</div>';
   h+='<div class="sech">🕒 Sắp lên · đã duyệt (máy tự đăng)</div>';
   h+= upcoming.length ? upcoming.map(igCard).join('') : '<div class="empty">Trống.</div>';
-  h+='<div class="sech">📤 Đã đăng</div>';
-  h+= pub.length ? pub.slice(0,12).map(igCard).join('') : '<div class="empty">Chưa có.</div>';
   if(other.length){ h+='<div class="sech">⚠️ Lỗi / Đang sửa / Đã bỏ</div>'+other.map(igCard).join(''); }
+  h+='<div class="sech">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="ig">'+(SHOW_PUB.ig?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
+  if(SHOW_PUB.ig) h+= pub.length ? pub.slice(0,50).map(igCard).join('') : '<div class="empty">Chưa có.</div>';
   host.innerHTML=h;
 }
 
@@ -486,16 +492,23 @@ function fbCard(p){
 }
 function renderFB(){
   var host=document.getElementById('fbBody');
-  var list=DATA.posts.filter(function(p){ return p.channel==='fb' && p.status!=='published'; }).sort(byTime);
+  var all=DATA.posts.filter(function(p){ return p.channel==='fb'; });
+  var list=all.filter(function(p){ return p.status!=='published'; }).sort(byTime);
+  var pub=all.filter(function(p){ return p.status==='published'; }).sort(byTime).reverse();
   var intro='<div class="fbintro">Facebook máy chưa đăng (app chưa Live) → <b>Gin đăng tay</b> trên Business Suite Planner. '
-    + 'Copy caption · tải ảnh · sắp thứ tự ảnh · tick "đã lên lịch" (lưu trên máy này).</div>';
-  if(!list.length){ host.innerHTML=intro+'<div class="empty">Không có bài FB cần đăng tay.</div>'; return; }
-  var cur='', h=intro;
-  list.forEach(function(p){
-    var d=dayLabel(p.scheduled_at);
-    if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; }
-    h+=fbCard(p);
-  });
+    + 'Copy caption · tải ảnh · sắp/thêm/xóa ảnh · tick "đã lên lịch" (lưu trên máy này).</div>';
+  var h=intro;
+  if(!list.length){ h+='<div class="empty">Không có bài FB cần đăng tay.</div>'; }
+  else {
+    var cur='';
+    list.forEach(function(p){
+      var d=dayLabel(p.scheduled_at);
+      if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; }
+      h+=fbCard(p);
+    });
+  }
+  h+='<div class="dayhdr">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="fb">'+(SHOW_PUB.fb?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
+  if(SHOW_PUB.fb && pub.length) h+= pub.slice(0,50).map(fbCard).join('');
   host.innerHTML=h;
 }
 
@@ -503,7 +516,7 @@ function renderFB(){
 function adCard(a){
   var cr=a.creative||{};
   var h='<div class="card"><div class="meta"><span class="chchip ads">ADS</span>'
-    + '<span class="tm">'+esc(a.name||'—')+'</span>'+chip(a.status)+'<span class="id">#'+a.id+'</span></div>';
+    + '<span class="bcode">'+esc(a.name||('#'+a.id))+'</span>'+chip(a.status)+'<span class="id">#'+a.id+'</span></div>';
   if(cr.image_url) h+=thumbStrip([{url:cr.image_url}],'ad'+a.id);
   h+='<div class="cap">Mục tiêu: '+esc(a.objective||'—')+'\nĐối tượng: '+esc(a.audience||'—')
     + '\nNgân sách: '+money(a.budget_vnd)+'/ngày\nLịch: '+esc(a.schedule_note||'—')
@@ -570,6 +583,7 @@ function wireBody(host){
     if((el=e.target.closest('[data-del]'))){ deletePhoto(+el.getAttribute('data-del'), +el.getAttribute('data-i')); return; }
     if((el=e.target.closest('[data-add]'))){ startAdd(+el.getAttribute('data-add')); return; }
     if((el=e.target.closest('[data-undo]'))){ doUndo(+el.getAttribute('data-undo')); return; }
+    if((el=e.target.closest('[data-pub]'))){ togglePub(el.getAttribute('data-pub')); return; }
     if((el=e.target.closest('[data-copy]'))){ var p=post(el.getAttribute('data-pid')); if(!p) return;
       copyText(el.getAttribute('data-copy')==='cap' ? (p.caption||'') : (p.first_comment_text||''), el); return; }
     if((el=e.target.closest('[data-lb]'))){ openLB(el.getAttribute('data-lb'), +el.getAttribute('data-lbi')); return; }
