@@ -88,6 +88,53 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .pctl .dl{flex:1.5}
 .reord{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);margin:6px 2px 0}
 .reset{background:none;border:none;color:var(--brown2);font-size:11.5px;cursor:pointer;text-decoration:underline}
+/* editor ảnh (sắp/xóa/thêm) */
+.pimgs.saving{opacity:.55;pointer-events:none}
+.delp{color:#b3392f}
+.addp{flex:0 0 auto;width:112px;min-height:140px;border:1.5px dashed var(--brown2);background:var(--surf);color:var(--brown);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12.5px;font-weight:700;cursor:pointer;line-height:1.2}
+.addp span{font-size:26px;line-height:1}
+.addp:disabled{opacity:.4;cursor:default}
+/* mã bài (B11…) + nút hiện/ẩn bài đã đăng */
+.bcode{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:11.5px;color:#fff;background:var(--brown);border-radius:6px;padding:1px 7px;letter-spacing:.3px}
+.pubtoggle{border:1px solid var(--line);background:var(--warm);color:var(--brown);border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;margin-left:8px}
+/* preview WYSIWYG: hiển thị giống layout thật FB/IG để duyệt */
+.fv{margin:10px 0 4px}
+.fvlab{font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600}
+.collage{display:grid;gap:3px;border-radius:11px;overflow:hidden;border:1px solid var(--line);max-width:360px;background:#eee}
+.collage .c{background-size:cover;background-position:center;background-color:#efe7da;position:relative;min-height:0;cursor:zoom-in}
+.collage.n1{grid-template-columns:1fr}.collage.n1 .c{aspect-ratio:4/5}
+.collage.n2{grid-template-columns:1fr 1fr;aspect-ratio:1.9/1}
+.collage.n3{grid-template-columns:1.45fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:4/5}
+.collage.n3 .c:first-child{grid-row:1/3}
+.collage.n3.land{grid-template-columns:1fr 1fr;grid-template-rows:1.5fr 1fr;aspect-ratio:1.3/1}
+.collage.n3.land .c:first-child{grid-row:1;grid-column:1/3}
+.collage.n4{grid-template-columns:1.5fr 1fr;grid-template-rows:repeat(3,1fr);aspect-ratio:4/5}
+.collage.n4 .c:first-child{grid-row:1/4}
+.collage.n4.land{grid-template-columns:repeat(3,1fr);grid-template-rows:1.5fr 1fr;aspect-ratio:1.3/1}
+.collage.n4.land .c:first-child{grid-row:1;grid-column:1/4}
+.collage .more{position:absolute;inset:0;background:rgba(30,20,12,.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.igcover{max-width:300px;border-radius:11px;overflow:hidden;border:1px solid var(--line)}
+.igcover .cv{aspect-ratio:4/5;background-size:cover;background-position:center;background-color:#efe7da;cursor:zoom-in;position:relative}
+.igcover .multi{position:absolute;top:8px;right:8px;color:#fff;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.dots{display:flex;gap:5px;justify-content:center;padding:7px 0;background:#fff}
+.dots i{width:6px;height:6px;border-radius:50%;background:#d8cbb8;display:block}
+.dots i.on{background:var(--brown)}
+/* thẻ bài đăng thật (chrome IG/FB) */
+.pcard{max-width:380px;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:#fff}
+.phdr{display:flex;align-items:center;gap:9px;padding:9px 11px}
+.pav{width:31px;height:31px;border-radius:50%;flex:0 0 auto;background:linear-gradient(135deg,#f3dde0,#e8d3a8);border:1px solid var(--line)}
+.pnm{font-weight:700;font-size:13px;color:var(--ink);line-height:1.1}
+.ptime{font-size:11px;color:var(--muted);display:flex;gap:4px}
+.phdr .pmore{margin-left:auto;color:var(--muted);font-weight:700;font-size:16px}
+.pcaptop{padding:0 12px 9px;font-size:13.5px;white-space:pre-wrap;max-height:66px;overflow:hidden;color:var(--ink)}
+.pcard .igcover,.pcard .collage{max-width:none;border-radius:0;border-left:none;border-right:none}
+.pcard .collage{border-left:none;border-right:none;border-top:1px solid var(--line)}
+.pacts{display:flex;gap:15px;padding:9px 12px 3px;font-size:19px;color:var(--ink)}
+.pacts .save{margin-left:auto}
+.pcap{padding:1px 12px 11px;font-size:13px;line-height:1.45;white-space:pre-wrap;max-height:60px;overflow:hidden}
+.pcap b{font-weight:700}
+.pbar{display:flex;border-top:1px solid var(--line);margin-top:3px}
+.pbar span{flex:1;text-align:center;padding:9px 0;font-size:12.5px;color:var(--muted);font-weight:600}
 .frow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .copy{background:var(--brown);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13.5px;font-weight:600;cursor:pointer;min-height:40px}
 .copy.done{background:#4b7a4e}
@@ -151,6 +198,8 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
   </div>
 </div>
 
+<input type="file" id="addfile" accept="image/*" style="display:none" onchange="onAddFile(this)">
+
 <div id="lb" onclick="closeLB()">
   <span class="nav prev" onclick="event.stopPropagation();stepLB(-1)">‹</span>
   <img id="lbimg" src="" alt="">
@@ -180,11 +229,10 @@ var STC = {
   activated_by_owner:{c:'green', t:'▶️ Gin đã bật'}
 };
 
-/* localStorage: đăng-tay FB + thứ tự ảnh tùy chỉnh */
+/* localStorage: chỉ còn tick "đã lên lịch" FB (thứ tự ảnh nay lưu thẳng DB) */
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){ return {}; } }
 function store(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 var FBDONE = load('enm-fb-done');
-var FBORDER = load('enm-fb-order');
 
 /* ---- helpers ---- */
 function api(body){ body.pin = PIN;
@@ -268,15 +316,203 @@ function thumbStrip(list, key){
   return h+'</div>';
 }
 
+/* ============ QUẢN LÝ ẢNH (sắp thứ tự · xóa · thêm) — CHỈ bài runner không đăng ============ */
+var EDITABLE_UI = ['pending','needs_edit','rejected','failed'];  // khớp EDITABLE ở edge function
+var IMG_FMT = ['photo','multi_photo'];
+var SAVING = {};      // SAVING[id]=true khi đang lưu (khóa thao tác chồng nhau)
+var UNDO = {};        // UNDO[id]=mảng ảnh trước đó (hoàn tác)
+var ADD_TARGET = null;
+var DRAG = null;
+var SHOW_PUB = {ig:false, fb:false};   // ẩn bài đã đăng mặc định (đỡ tốn tài nguyên); bấm mới hiện
+function togglePub(ch){ SHOW_PUB[ch] = !SHOW_PUB[ch]; if(ch==='ig') renderIG(); else renderFB(); }
+
+function canEditMedia(p){ return EDITABLE_UI.indexOf(p.status)>=0 && IMG_FMT.indexOf(p.format)>=0; }
+function reRenderFor(p){ if(p.channel==='ig') renderIG(); else renderFB(); }
+
+/* preview WYSIWYG: bọc thành THẺ BÀI ĐĂNG THẬT (chrome IG/FB) để duyệt như đang xem feed */
+function feedPreview(p){
+  var media=p.media||[];
+  if(!media.length || IMG_FMT.indexOf(p.format)<0) return '';
+  var key='fv'+p.id; LBSETS[key]=media.map(function(m){ return m.url; });
+  var full=(p.caption||''), capShort=esc(full.slice(0,150))+(full.length>150?'…':'');
+  if(p.channel==='ig'){
+    var url0=media[0].thumb_url||media[0].url, dots='';
+    if(media.length>1){ dots='<div class="dots">'; for(var i=0;i<Math.min(media.length,10);i++) dots+='<i'+(i===0?' class="on"':'')+'></i>'; dots+='</div>'; }
+    return '<div class="fv"><div class="fvlab">📱 Xem như bài Instagram thật'+(media.length>1?' · '+media.length+' ảnh':'')+'</div>'
+      + '<div class="pcard ig">'
+      + '<div class="phdr"><div class="pav"></div><div class="pnm">em.nhumay</div><div class="pmore">⋯</div></div>'
+      + '<div class="igcover"><div class="cv" data-lb="'+key+'" data-lbi="0" style="background-image:url(\''+esc(url0)+'\')">'+(media.length>1?'<span class="multi">▤</span>':'')+'</div>'+dots+'</div>'
+      + '<div class="pacts"><span>♡</span><span>💬</span><span>➤</span><span class="save">🔖</span></div>'
+      + '<div class="pcap"><b>em.nhumay</b> '+capShort+'</div>'
+      + '</div></div>';
+  }
+  var n=media.length, show=Math.min(n,4), cells='';
+  for(var i=0;i<show;i++){
+    var u=media[i].thumb_url||media[i].url;
+    var ov=(i===show-1 && n>show)?'<div class="more">+'+(n-show)+'</div>':'';
+    cells+='<div class="c" data-lb="'+key+'" data-lbi="'+i+'" style="background-image:url(\''+esc(u)+'\')">'+ov+'</div>';
+  }
+  return '<div class="fv"><div class="fvlab">📘 Xem như bài Facebook thật · '+n+' ảnh</div>'
+    + '<div class="pcard fb">'
+    + '<div class="phdr"><div class="pav"></div><div><div class="pnm">EM NHU MAY</div><div class="ptime">Vừa xong · 🌐</div></div><div class="pmore">⋯</div></div>'
+    + (full?'<div class="pcaptop">'+capShort+'</div>':'')
+    + '<div class="collage n'+show+'" data-first="'+esc(media[0].thumb_url||media[0].url)+'">'+cells+'</div>'
+    + '<div class="pbar"><span>👍 Thích</span><span>💬 Bình luận</span><span>↗ Chia sẻ</span></div>'
+    + '</div></div>';
+}
+/* đo ảnh đầu: NGANG → đổi collage sang kiểu "1 lớn trên + nhỏ dưới" cho khớp FB thật */
+function measureCollages(){
+  var els=document.querySelectorAll('.collage[data-first]');
+  for(var i=0;i<els.length;i++){ (function(el){
+    var u=el.getAttribute('data-first'); if(!u) return;
+    var im=new Image();
+    im.onload=function(){ if(im.naturalWidth > im.naturalHeight*1.05) el.classList.add('land'); };
+    im.src=u;
+  })(els[i]); }
+}
+
+function setMedia(id, media, expected){ return api({action:'set_media', id:id, media:media, expected_updated_at:expected}); }
+function addMediaApi(id, b64, expected){ return api({action:'add_media', id:id, content_base64:b64, expected_updated_at:expected}); }
+
+/* editor ảnh 1 bài — ro=true: chỉ xem + tải (bài không sửa được / story) */
+function mediaEditor(p, key, ro){
+  var media = p.media || [];
+  LBSETS[key] = media.map(function(m){ return m.url; });
+  var multi = media.length>1;
+  var saving = !!SAVING[p.id];
+  var cap = p.channel==='ig' ? 10 : 30;
+  var h = '<div class="pimgs'+(saving?' saving':'')+'">';
+  media.forEach(function(m,i){
+    var isVid = (m.kind||'')==='video';
+    h += '<div class="pimg" data-pid="'+p.id+'" data-i="'+i+'"'+((!ro&&multi&&!saving)?' draggable="true"':'')+'>'
+      + '<div class="pph" data-lb="'+key+'" data-lbi="'+i+'"><img src="'+esc(m.thumb_url||m.url)+'" loading="lazy" alt="">'
+      + (multi?'<span class="ord">'+(i+1)+'</span>':'')
+      + (isVid?'<span class="play">▶</span>':'') + '</div>'
+      + '<div class="pctl">'
+      + ((!ro&&multi)?'<button data-mv="up" data-pid="'+p.id+'" data-i="'+i+'"'+((i===0||saving)?' disabled':'')+' aria-label="Lùi">◀</button>':'')
+      + ((!ro&&multi)?'<button data-mv="down" data-pid="'+p.id+'" data-i="'+i+'"'+((i===media.length-1||saving)?' disabled':'')+' aria-label="Tiến">▶</button>':'')
+      + '<button class="dl" data-dl="'+esc(m.url)+'">⬇</button>'
+      + (!ro?'<button class="delp" data-del="'+p.id+'" data-i="'+i+'"'+((media.length<=1||saving)?' disabled':'')+' aria-label="Xóa">🗑</button>':'')
+      + '</div></div>';
+  });
+  if(!ro) h += '<button class="addp" data-add="'+p.id+'"'+((media.length>=cap||saving)?' disabled':'')+'><span>＋</span>Thêm ảnh</button>';
+  h += '</div>';
+  if(!ro){
+    h += '<div class="reord">'
+      + (saving ? '<span>💾 đang lưu…</span>'
+                : '<span>↕ Kéo (máy tính) · ◀▶ đổi thứ tự · 🗑 xóa · ＋ thêm — máy đăng đúng thứ tự này</span>')
+      + ((UNDO[p.id] && !saving) ? ' <button class="reset" data-undo="'+p.id+'">↺ hoàn tác</button>' : '')
+      + '</div>';
+  }
+  return h;
+}
+
+/* áp mảng ảnh mới (sắp/xóa): optimistic + khóa + lưu DB (chống ghi-đè-cũ bằng expected_updated_at) */
+function applyMedia(id, newMedia){
+  if(SAVING[id]) return;
+  var p=post(id); if(!p) return;
+  if(newMedia.length<1){ alert('Phải còn ít nhất 1 ảnh.'); return; }
+  UNDO[id]=(p.media||[]).slice();
+  var expected=p.updated_at;
+  p.media=newMedia; p.format=(newMedia.length===1?'photo':'multi_photo');
+  SAVING[id]=true; reRenderFor(p);
+  setMedia(id, newMedia, expected).then(function(j){
+    SAVING[id]=false;
+    if(!j || j.error){
+      delete UNDO[id];
+      alert('Không lưu được: '+(j&&j.error==='stale' ? 'bài vừa đổi ở nơi khác — đã tải lại' : (j&&j.error)||'lỗi mạng'));
+      refresh(); return;
+    }
+    if(j.updated_at) p.updated_at=j.updated_at;
+    reRenderFor(p);
+    setTimeout(function(){ if(UNDO[id]){ delete UNDO[id]; var pp=post(id); if(pp) reRenderFor(pp);} }, 7000);
+  });
+}
+function moveMedia(id, i, dir){
+  var p=post(id); if(!p||SAVING[id]) return;
+  var media=(p.media||[]).slice(); var j=i+dir;
+  if(j<0||j>=media.length) return;
+  var t=media[i]; media[i]=media[j]; media[j]=t;
+  applyMedia(id, media);
+}
+function deletePhoto(id, i){
+  var p=post(id); if(!p||SAVING[id]) return;
+  var media=(p.media||[]);
+  if(media.length<=1){ alert('Không xóa được ảnh cuối — bài phải còn ít nhất 1 ảnh.'); return; }
+  if(!confirm('Xóa ảnh này khỏi bài?')) return;
+  var nm=media.slice(); nm.splice(i,1);
+  applyMedia(id, nm);
+}
+function doUndo(id){
+  if(SAVING[id] || !UNDO[id]) return;
+  var prev=UNDO[id]; delete UNDO[id];
+  applyMedia(id, prev);
+}
+function startAdd(id){ if(SAVING[id]) return; ADD_TARGET=id; document.getElementById('addfile').click(); }
+function onAddFile(input){
+  var f = input.files && input.files[0];
+  input.value='';
+  if(!f || ADD_TARGET==null) return;
+  var id=ADD_TARGET; ADD_TARGET=null;
+  var p=post(id); if(!p || SAVING[id]) return;
+  SAVING[id]=true; reRenderFor(p);
+  prepImage(f).then(function(b64){
+    return addMediaApi(id, b64, p.updated_at);
+  }).then(function(j){
+    SAVING[id]=false;
+    if(!j || j.error){
+      alert('Không thêm được ảnh: '+(j&&j.error==='stale' ? 'bài vừa đổi — đã tải lại' : (j&&j.error)||'lỗi mạng'));
+      refresh(); return;
+    }
+    refresh();   // tải lại: có ảnh mới + thứ tự + updated_at (xử đúng cả trùng ảnh)
+  }).catch(function(e){
+    SAVING[id]=false;
+    var pp=post(id); if(pp) reRenderFor(pp);
+    alert(e && e.message ? e.message : 'Ảnh không đọc được (HEIC?) — chọn ảnh JPEG.');
+  });
+}
+
+/* nén + xoay đúng EXIF → JPEG base64 (chặn ảnh trống HEIC, không upload ảnh hỏng) */
+function prepImage(file){
+  return new Promise(function(resolve, reject){
+    function draw(src, w, h){
+      if(!w || !h){ reject(new Error('Ảnh không đọc được (HEIC?) — chọn ảnh JPEG.')); return; }
+      var max=2048, sc=Math.min(1, max/Math.max(w,h));   // giữ ảnh sắc (FB tới 2048; IG lấy nguồn tốt hơn)
+      var cw=Math.max(1,Math.round(w*sc)), ch=Math.max(1,Math.round(h*sc));
+      var cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+      var ctx=cv.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,cw,ch);
+      try{ ctx.drawImage(src,0,0,cw,ch); }catch(e){ reject(new Error('Ảnh không vẽ được — chọn ảnh JPEG.')); return; }
+      var durl;
+      try{ durl=cv.toDataURL('image/jpeg',0.92); }catch(e){ reject(new Error('Ảnh lỗi khi nén.')); return; }
+      if(!durl || durl.length<200){ reject(new Error('Ảnh không đọc được — chọn ảnh JPEG.')); return; }
+      resolve(durl);
+    }
+    if(window.createImageBitmap){
+      createImageBitmap(file, {imageOrientation:'from-image'}).then(function(bmp){
+        draw(bmp, bmp.width, bmp.height);
+      }).catch(function(){ viaImg(); });
+    } else viaImg();
+    function viaImg(){
+      var url=URL.createObjectURL(file);
+      var img=new Image();
+      img.onload=function(){ draw(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(url); };
+      img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error('Ảnh không đọc được (HEIC?) — chọn ảnh JPEG.')); };
+      img.src=url;
+    }
+  });
+}
+
 /* ============ AUTO IG ============ */
 function igCard(p){
   var h='<div class="card"><div class="meta">'
     + '<span class="chchip ig">IG</span>'
+    + (p.batch?'<span class="bcode">'+esc(p.batch)+'</span>':'')
     + '<span class="fmt">'+esc(FMT[p.format]||p.format)+'</span>'
     + '<span class="tm">'+esc(fmtTime(p.scheduled_at))+'</span>'
     + chip(p.status)
     + '<span class="id">#'+p.id+'</span></div>'
-    + thumbStrip(p.media,'ig'+p.id)
+    + feedPreview(p)
+    + (canEditMedia(p) ? mediaEditor(p,'ig'+p.id,false) : thumbStrip(p.media,'ig'+p.id))
     + '<div class="cap">'+esc(p.caption)+'</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
   if(p.first_comment_text) h+='<div class="fc">💬 comment bảng size — máy tự gắn sau khi đăng</div>';
   if(p.status==='needs_edit' && p.edit_note) h+='<div class="note">✏️ Gin yêu cầu: '+esc(p.edit_note)+'</div>';
@@ -296,34 +532,16 @@ function renderIG(){
   h+= pending.length ? pending.map(igCard).join('') : '<div class="empty">Không có bài IG chờ duyệt.</div>';
   h+='<div class="sech">🕒 Sắp lên · đã duyệt (máy tự đăng)</div>';
   h+= upcoming.length ? upcoming.map(igCard).join('') : '<div class="empty">Trống.</div>';
-  h+='<div class="sech">📤 Đã đăng</div>';
-  h+= pub.length ? pub.slice(0,12).map(igCard).join('') : '<div class="empty">Chưa có.</div>';
   if(other.length){ h+='<div class="sech">⚠️ Lỗi / Đang sửa / Đã bỏ</div>'+other.map(igCard).join(''); }
-  host.innerHTML=h;
+  h+='<div class="sech">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="ig">'+(SHOW_PUB.ig?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
+  if(SHOW_PUB.ig) h+= pub.length ? pub.slice(0,50).map(igCard).join('') : '<div class="empty">Chưa có.</div>';
+  host.innerHTML=h; measureCollages();
 }
 
 /* ============ PLANNER FB ============ */
-function orderedMedia(p){
-  var media=(p.media||[]).slice();
-  var ord=FBORDER[p.id];
-  if(!ord||!ord.length) return media;
-  var byUrl={}; media.forEach(function(m){ byUrl[m.url]=m; });
-  var out=[];
-  ord.forEach(function(u){ if(byUrl[u]){ out.push(byUrl[u]); delete byUrl[u]; } });
-  media.forEach(function(m){ if(byUrl[m.url]) out.push(m); });   // ảnh mới (nếu media đổi) → nối cuối
-  return out;
-}
-function moveImg(id, i, dir){
-  var p=post(id); if(!p) return;
-  var arr=orderedMedia(p).map(function(m){ return m.url; });
-  var j=i+dir; if(j<0||j>=arr.length) return;
-  var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
-  FBORDER[id]=arr; store('enm-fb-order',FBORDER); renderFB();
-}
 function fbCard(p){
   var isStory=p.format==='story';
-  var media=orderedMedia(p);
-  var multi=media.length>1;
+  var media=p.media||[];
   var done=!!FBDONE[p.id];
   var key='fb'+p.id; LBSETS[key]=media.map(function(m){ return m.url; });
   var h='<div class="card'+(done?' done':'')+'">';
@@ -338,32 +556,16 @@ function fbCard(p){
       + '<div class="frow"><button class="copy" data-copy="cap" data-pid="'+p.id+'">📋 Copy caption</button>'
       + '<span class="sub">'+media.length+' ảnh — chạm để phóng to, ⬇ để tải</span></div>';
   }
-  // ảnh + sắp thứ tự
-  h+='<div class="pimgs">';
-  media.forEach(function(m,i){
-    var drag = multi ? ' draggable="true"' : '';
-    h+='<div class="pimg" data-pid="'+p.id+'" data-i="'+i+'"'+drag+'>'
-      + '<div class="pph fbthumb" data-lbkey="'+key+'" data-lbidx="'+i+'"><img src="'+esc(m.thumb_url||m.url)+'" loading="lazy" alt="">'
-      + (multi?'<span class="ord">'+(i+1)+'</span>':'') + '</div>'
-      + '<div class="pctl">'
-      + (multi?'<button data-move="up" data-pid="'+p.id+'" data-i="'+i+'"'+(i===0?' disabled':'')+' aria-label="Lùi ảnh">◀</button>':'')
-      + (multi?'<button data-move="down" data-pid="'+p.id+'" data-i="'+i+'"'+(i===media.length-1?' disabled':'')+' aria-label="Tiến ảnh">▶</button>':'')
-      + '<button class="dl" data-dl="'+esc(m.url)+'">⬇ Tải</button>'
-      + '</div></div>';
-  });
-  h+='</div>';
-  if(multi){
-    var reordered=!!(FBORDER[p.id]&&FBORDER[p.id].length);
-    h+='<div class="reord"><span>↕ Kéo ảnh (máy tính) hoặc ◀ ▶ để đổi thứ tự đăng'+(reordered?' · <b>đã đổi</b>':'')+'</span>'
-      + (reordered?'<button class="reset" data-reset="'+p.id+'">↺ thứ tự gốc</button>':'') + '</div>';
-  }
+  // preview giống FB thật + editor ảnh (sắp/xóa/thêm)
+  h+= feedPreview(p);
+  h+= canEditMedia(p) ? mediaEditor(p,key,false) : mediaEditor(p,key,true);
   if(!isStory && p.first_comment_text){
     h+='<div class="cmt"><div class="lbl">💬 Bình luận đầu (đăng sau khi bài lên, kèm ảnh bảng size):</div>'
       + '<div class="cap">'+esc(p.first_comment_text)+'</div>'
       + '<div class="frow"><button class="copy" data-copy="cmt" data-pid="'+p.id+'">📋 Copy bình luận</button>';
     if(p.first_comment_photo_url){
       var ck='fbc'+p.id; LBSETS[ck]=[p.first_comment_photo_url];
-      h+='<div class="pimg" style="width:100px"><div class="pph fbthumb" data-lbkey="'+ck+'" data-lbidx="0"><img src="'+esc(p.first_comment_photo_url)+'" loading="lazy" alt=""></div>'
+      h+='<div class="pimg" style="width:100px"><div class="pph" data-lb="'+ck+'" data-lbi="0"><img src="'+esc(p.first_comment_photo_url)+'" loading="lazy" alt=""></div>'
         + '<div class="pctl"><button class="dl" data-dl="'+esc(p.first_comment_photo_url)+'">⬇ Bảng size</button></div></div>';
     }
     h+='</div></div>';
@@ -372,24 +574,31 @@ function fbCard(p){
 }
 function renderFB(){
   var host=document.getElementById('fbBody');
-  var list=DATA.posts.filter(function(p){ return p.channel==='fb' && p.status!=='published'; }).sort(byTime);
+  var all=DATA.posts.filter(function(p){ return p.channel==='fb'; });
+  var list=all.filter(function(p){ return p.status!=='published'; }).sort(byTime);
+  var pub=all.filter(function(p){ return p.status==='published'; }).sort(byTime).reverse();
   var intro='<div class="fbintro">Facebook máy chưa đăng (app chưa Live) → <b>Gin đăng tay</b> trên Business Suite Planner. '
-    + 'Copy caption · tải ảnh · sắp thứ tự ảnh · tick "đã lên lịch" (lưu trên máy này).</div>';
-  if(!list.length){ host.innerHTML=intro+'<div class="empty">Không có bài FB cần đăng tay.</div>'; return; }
-  var cur='', h=intro;
-  list.forEach(function(p){
-    var d=dayLabel(p.scheduled_at);
-    if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; }
-    h+=fbCard(p);
-  });
-  host.innerHTML=h;
+    + 'Copy caption · tải ảnh · sắp/thêm/xóa ảnh · tick "đã lên lịch" (lưu trên máy này).</div>';
+  var h=intro;
+  if(!list.length){ h+='<div class="empty">Không có bài FB cần đăng tay.</div>'; }
+  else {
+    var cur='';
+    list.forEach(function(p){
+      var d=dayLabel(p.scheduled_at);
+      if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; }
+      h+=fbCard(p);
+    });
+  }
+  h+='<div class="dayhdr">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="fb">'+(SHOW_PUB.fb?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
+  if(SHOW_PUB.fb && pub.length) h+= pub.slice(0,50).map(fbCard).join('');
+  host.innerHTML=h; measureCollages();
 }
 
 /* ============ ADS ============ */
 function adCard(a){
   var cr=a.creative||{};
   var h='<div class="card"><div class="meta"><span class="chchip ads">ADS</span>'
-    + '<span class="tm">'+esc(a.name||'—')+'</span>'+chip(a.status)+'<span class="id">#'+a.id+'</span></div>';
+    + '<span class="bcode">'+esc(a.name||('#'+a.id))+'</span>'+chip(a.status)+'<span class="id">#'+a.id+'</span></div>';
   if(cr.image_url) h+=thumbStrip([{url:cr.image_url}],'ad'+a.id);
   h+='<div class="cap">Mục tiêu: '+esc(a.objective||'—')+'\nĐối tượng: '+esc(a.audience||'—')
     + '\nNgân sách: '+money(a.budget_vnd)+'/ngày\nLịch: '+esc(a.schedule_note||'—')
@@ -447,34 +656,36 @@ function tab(name){
   var ts=document.querySelectorAll('.tab'); for(var j=0;j<ts.length;j++) ts[j].classList.toggle('on', ts[j].getAttribute('data-tab')===name);
 }
 
-/* ---- FB body: delegation (copy / tải / kéo-đổi thứ tự / lightbox / tick) ---- */
-var DRAG=null;
-function wireFB(){
-  var b=document.getElementById('fbBody');
-  b.addEventListener('click', function(e){
+/* ---- delegation dùng cho CẢ igBody & fbBody: sửa ảnh · copy · tải · lightbox · tick · kéo-thả ---- */
+function wireBody(host){
+  host.addEventListener('click', function(e){
     var el;
     if((el=e.target.closest('[data-dl]'))){ dl(el.getAttribute('data-dl')); return; }
+    if((el=e.target.closest('[data-mv]'))){ moveMedia(+el.getAttribute('data-pid'), +el.getAttribute('data-i'), el.getAttribute('data-mv')==='up'?-1:1); return; }
+    if((el=e.target.closest('[data-del]'))){ deletePhoto(+el.getAttribute('data-del'), +el.getAttribute('data-i')); return; }
+    if((el=e.target.closest('[data-add]'))){ startAdd(+el.getAttribute('data-add')); return; }
+    if((el=e.target.closest('[data-undo]'))){ doUndo(+el.getAttribute('data-undo')); return; }
+    if((el=e.target.closest('[data-pub]'))){ togglePub(el.getAttribute('data-pub')); return; }
     if((el=e.target.closest('[data-copy]'))){ var p=post(el.getAttribute('data-pid')); if(!p) return;
       copyText(el.getAttribute('data-copy')==='cap' ? (p.caption||'') : (p.first_comment_text||''), el); return; }
-    if((el=e.target.closest('[data-move]'))){ moveImg(+el.getAttribute('data-pid'), +el.getAttribute('data-i'), el.getAttribute('data-move')==='up'?-1:1); return; }
-    if((el=e.target.closest('[data-reset]'))){ delete FBORDER[+el.getAttribute('data-reset')]; store('enm-fb-order',FBORDER); renderFB(); return; }
-    if((el=e.target.closest('.fbthumb'))){ openLB(el.getAttribute('data-lbkey'), +el.getAttribute('data-lbidx')); return; }
+    if((el=e.target.closest('[data-lb]'))){ openLB(el.getAttribute('data-lb'), +el.getAttribute('data-lbi')); return; }
   });
-  b.addEventListener('change', function(e){
+  host.addEventListener('change', function(e){
     var cb=e.target.closest('[data-done]'); if(!cb) return;
     var id=+cb.getAttribute('data-done'); if(cb.checked) FBDONE[id]=true; else delete FBDONE[id];
     store('enm-fb-done',FBDONE); renderFB(); renderSummary();
   });
-  b.addEventListener('dragstart', function(e){ var pim=e.target.closest('.pimg[draggable=true]'); if(!pim) return;
+  host.addEventListener('dragstart', function(e){ var pim=e.target.closest('.pimg[draggable=true]'); if(!pim) return;
     DRAG={pid:+pim.getAttribute('data-pid'), i:+pim.getAttribute('data-i')}; e.dataTransfer.effectAllowed='move'; pim.classList.add('drag'); });
-  b.addEventListener('dragend', function(e){ var pim=e.target.closest('.pimg'); if(pim) pim.classList.remove('drag'); DRAG=null; });
-  b.addEventListener('dragover', function(e){ if(e.target.closest('.pimg')) e.preventDefault(); });
-  b.addEventListener('drop', function(e){ var tgt=e.target.closest('.pimg'); if(!tgt||!DRAG) return; e.preventDefault();
-    if(+tgt.getAttribute('data-pid')!==DRAG.pid) return;           // chỉ đổi trong cùng 1 bài
-    var to=+tgt.getAttribute('data-i'), from=DRAG.i; if(to===from){ DRAG=null; return; }
-    var p=post(DRAG.pid); var arr=orderedMedia(p).map(function(m){ return m.url; });
+  host.addEventListener('dragend', function(e){ var pim=e.target.closest('.pimg'); if(pim) pim.classList.remove('drag'); DRAG=null; });
+  host.addEventListener('dragover', function(e){ if(e.target.closest('.pimg')) e.preventDefault(); });
+  host.addEventListener('drop', function(e){ var tgt=e.target.closest('.pimg'); if(!tgt||!DRAG) return; e.preventDefault();
+    if(+tgt.getAttribute('data-pid')!==DRAG.pid){ DRAG=null; return; }   // chỉ đổi trong cùng 1 bài
+    var to=+tgt.getAttribute('data-i'), from=DRAG.i, pid=DRAG.pid; DRAG=null;
+    if(to===from) return;
+    var p=post(pid); if(!p) return; var arr=(p.media||[]).slice();
     var mv=arr.splice(from,1)[0]; arr.splice(to,0,mv);
-    FBORDER[DRAG.pid]=arr; store('enm-fb-order',FBORDER); DRAG=null; renderFB(); });
+    applyMedia(pid, arr); });
 }
 
 /* ---- refresh ---- */
@@ -492,8 +703,13 @@ function refresh(){
 }
 
 document.getElementById('pin').addEventListener('keydown', function(e){ if(e.key==='Enter') enter(); });
-wireFB();
+wireBody(document.getElementById('igBody'));
+wireBody(document.getElementById('fbBody'));
 if(PIN) refresh();
-setInterval(function(){ if(!document.getElementById('app').hidden) refresh(); }, 60000);
+setInterval(function(){
+  if(document.getElementById('app').hidden) return;
+  for(var k in SAVING){ if(SAVING[k]) return; }   // đang lưu ảnh → đừng tải đè
+  refresh();
+}, 60000);
 </script>
 </body></html>
