@@ -323,8 +323,10 @@ var SAVING = {};      // SAVING[id]=true khi đang lưu (khóa thao tác chồng
 var UNDO = {};        // UNDO[id]=mảng ảnh trước đó (hoàn tác)
 var ADD_TARGET = null;
 var DRAG = null;
-var SHOW_PUB = {ig:false, fb:false};   // ẩn bài đã đăng mặc định (đỡ tốn tài nguyên); bấm mới hiện
+var SHOW_PUB = {ig:false, fb:false};       // ẩn bài ĐÃ ĐĂNG mặc định (đỡ tốn tài nguyên); bấm mới hiện
+var SHOW_DONE = {fb:false, ads:false};     // ẩn mục "đã xử lý" (FB: đã lên lịch · Ads: đã bật/bỏ) mặc định
 function togglePub(ch){ SHOW_PUB[ch] = !SHOW_PUB[ch]; if(ch==='ig') renderIG(); else renderFB(); }
+function toggleDone(k){ SHOW_DONE[k] = !SHOW_DONE[k]; if(k==='fb') renderFB(); else renderAds(); }
 
 function canEditMedia(p){ return EDITABLE_UI.indexOf(p.status)>=0 && IMG_FMT.indexOf(p.format)>=0; }
 function reRenderFor(p){ if(p.channel==='ig') renderIG(); else renderFB(); }
@@ -575,20 +577,24 @@ function fbCard(p){
 function renderFB(){
   var host=document.getElementById('fbBody');
   var all=DATA.posts.filter(function(p){ return p.channel==='fb'; });
-  var list=all.filter(function(p){ return p.status!=='published'; }).sort(byTime);
+  var np=all.filter(function(p){ return p.status!=='published'; });
+  var active=np.filter(function(p){ return !FBDONE[p.id]; }).sort(byTime);   // chưa lên lịch → Gin cần đăng tay
+  var sched=np.filter(function(p){ return !!FBDONE[p.id]; }).sort(byTime);    // đã tick "đã lên lịch" → dồn xuống
   var pub=all.filter(function(p){ return p.status==='published'; }).sort(byTime).reverse();
   var intro='<div class="fbintro">Facebook máy chưa đăng (app chưa Live) → <b>Gin đăng tay</b> trên Business Suite Planner. '
     + 'Copy caption · tải ảnh · sắp/thêm/xóa ảnh · tick "đã lên lịch" (lưu trên máy này).</div>';
   var h=intro;
-  if(!list.length){ h+='<div class="empty">Không có bài FB cần đăng tay.</div>'; }
+  if(!active.length){ h+='<div class="empty">Không có bài FB cần đăng tay.</div>'; }
   else {
     var cur='';
-    list.forEach(function(p){
+    active.forEach(function(p){
       var d=dayLabel(p.scheduled_at);
       if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; }
       h+=fbCard(p);
     });
   }
+  h+='<div class="dayhdr">✅ Đã lên lịch ('+sched.length+')'+(sched.length?'<button class="pubtoggle" data-donesec="fb">'+(SHOW_DONE.fb?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
+  if(SHOW_DONE.fb && sched.length) h+= sched.map(fbCard).join('');
   h+='<div class="dayhdr">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="fb">'+(SHOW_PUB.fb?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_PUB.fb && pub.length) h+= pub.slice(0,50).map(fbCard).join('');
   host.innerHTML=h; measureCollages();
@@ -610,14 +616,20 @@ function adCard(a){
 function renderAds(){
   var host=document.getElementById('adsBody');
   var A=DATA.ads.slice().sort(function(a,b){ return a.id-b.id; });
+  var isDone=function(a){ return ['activated_by_owner','rejected'].indexOf(a.status)>=0; };
+  var active=A.filter(function(a){ return !isDone(a); });
+  var done=A.filter(isDone);
   var link = ADS_EXPLAIN_URL
     ? '<a class="explain" href="'+esc(ADS_EXPLAIN_URL)+'" target="_blank" rel="noopener">ℹ️ Trang giải thích Ads</a>'
     : '<span class="explain muted">ℹ️ (chưa gắn link trang giải thích Ads)</span>';
-  host.innerHTML =
-      '<div class="adsnote">💰 Duyệt trên trang = máy chỉ <b>DỰNG NHÁP TẮT</b> trong Ads Manager. '
+  var h='<div class="adsnote">💰 Duyệt trên trang = máy chỉ <b>DỰNG NHÁP TẮT</b> trong Ads Manager. '
     + 'Bật chạy = Gin bấm tay rồi bấm "▶️ Tôi đã bật tay". <b>Máy KHÔNG bao giờ tự tiêu tiền.</b></div>'
-    + '<div class="adslink">'+link+'</div>'
-    + (A.length ? A.map(adCard).join('') : '<div class="empty">Chưa có ads nào.</div>');
+    + '<div class="adslink">'+link+'</div>';
+  if(!A.length){ host.innerHTML = h+'<div class="empty">Chưa có ads nào.</div>'; return; }
+  h+= active.length ? active.map(adCard).join('') : '<div class="empty">Không có ads chờ xử lý.</div>';
+  h+='<div class="sech">✅ Đã bật / đã bỏ ('+done.length+')'+(done.length?'<button class="pubtoggle" data-donesec="ads">'+(SHOW_DONE.ads?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
+  if(SHOW_DONE.ads && done.length) h+= done.map(adCard).join('');
+  host.innerHTML=h;
 }
 
 /* ============ summary + tabs ============ */
@@ -666,6 +678,7 @@ function wireBody(host){
     if((el=e.target.closest('[data-add]'))){ startAdd(+el.getAttribute('data-add')); return; }
     if((el=e.target.closest('[data-undo]'))){ doUndo(+el.getAttribute('data-undo')); return; }
     if((el=e.target.closest('[data-pub]'))){ togglePub(el.getAttribute('data-pub')); return; }
+    if((el=e.target.closest('[data-donesec]'))){ toggleDone(el.getAttribute('data-donesec')); return; }
     if((el=e.target.closest('[data-copy]'))){ var p=post(el.getAttribute('data-pid')); if(!p) return;
       copyText(el.getAttribute('data-copy')==='cap' ? (p.caption||'') : (p.first_comment_text||''), el); return; }
     if((el=e.target.closest('[data-lb]'))){ openLB(el.getAttribute('data-lb'), +el.getAttribute('data-lbi')); return; }
@@ -705,6 +718,7 @@ function refresh(){
 document.getElementById('pin').addEventListener('keydown', function(e){ if(e.key==='Enter') enter(); });
 wireBody(document.getElementById('igBody'));
 wireBody(document.getElementById('fbBody'));
+wireBody(document.getElementById('adsBody'));   // để nút ẩn/hiện (data-donesec) + lightbox ảnh Ads hoạt động
 if(PIN) refresh();
 setInterval(function(){
   if(document.getElementById('app').hidden) return;
