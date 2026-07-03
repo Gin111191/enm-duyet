@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Êm Như Mây · Bảng điều khiển đăng bài</title>
+<style>
+:root{--bg:#FAF6F0;--card:#fff;--ink:#3b3430;--brown:#7a5c2e;--brown2:#b0836b;--muted:#8a7f74;--line:#e8ddcf;--surf:#fbf7f1;--warm:#f5ead7}
+*{box-sizing:border-box}
+html,body{overflow-x:hidden}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:56px;line-height:1.45;-webkit-text-size-adjust:100%}
+h1,h2,.colh{font-family:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif}
+/* topbar (sticky as one unit — no fragile offsets) */
+#topbar{position:sticky;top:0;z-index:20;background:var(--bg)}
+header{background:#fffdf9;border-bottom:1px solid var(--line);padding:11px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+header .ttl{font-weight:700;color:var(--brown);letter-spacing:.3px;font-size:16px}
+header button{border:1px solid var(--line);background:var(--warm);color:var(--brown);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;min-height:38px}
+.sumbar{background:var(--surf);border-bottom:1px solid var(--line);padding:9px 12px;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;align-items:center}
+.sumbar .it{white-space:nowrap}
+.sumbar b{color:var(--brown)}
+.num{font-variant-numeric:tabular-nums;font-weight:700}
+.tabs{display:flex;gap:6px;background:var(--bg);padding:8px 10px;border-bottom:1px solid var(--line)}
+.tab{flex:1;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:11px;padding:9px 4px;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px}
+.tab.on{background:var(--brown);color:#fff;border-color:var(--brown)}
+.tb{font-variant-numeric:tabular-nums;background:rgba(0,0,0,.12);border-radius:10px;padding:0 6px;font-size:11.5px;min-width:16px;text-align:center}
+.tab.on .tb{background:rgba(255,255,255,.28)}
+/* columns */
+.cols{padding:10px}
+.col{display:none}
+.col.active{display:block}
+.colh{font-size:16px;color:var(--brown);margin:2px 2px 10px;font-weight:700}
+.colh small{font-family:-apple-system,sans-serif;font-weight:600;color:var(--muted);font-size:12px}
+.sech{font-size:11.5px;font-weight:700;color:var(--muted);margin:14px 2px 6px;text-transform:uppercase;letter-spacing:.4px}
+.empty{color:var(--muted);font-size:12.5px;padding:6px 2px}
+/* card */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card.done{opacity:.5}
+.meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.tm{font-weight:700;color:var(--ink);font-size:13.5px}
+.fmt{font-weight:600}
+.id{margin-left:auto;font-size:11px;color:#b8ac9d}
+/* channel + status chips */
+.chchip{border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;color:#fff}
+.chchip.ig{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}
+.chchip.fb{background:#1877f2}
+.chchip.ads{background:#7a5c2e}
+.sc{border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap}
+.sc-amber{background:#fbeccb;color:#8a5d0e}
+.sc-green{background:#e3efe1;color:#3f7a49}
+.sc-blue{background:#e2ecf8;color:#2b6cb0}
+.sc-gray{background:#ececec;color:#7a7166}
+.sc-teal{background:#d7efea;color:#2b7a72}
+.sc-purple{background:#efe6f4;color:#7a4b8a}
+.sc-red{background:#fdeaea;color:#b3392f}
+/* thumbnails strip (IG / Ads) */
+.imgs{display:flex;gap:6px;overflow-x:auto;margin:10px 0;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.imgs .th{flex:0 0 auto;position:relative;line-height:0}
+.imgs img{width:96px;height:120px;object-fit:cover;border-radius:9px;border:1px solid var(--line);display:block}
+.play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.cap{white-space:pre-wrap;font-size:13.5px;line-height:1.45;max-height:112px;overflow:hidden;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-top:8px}
+.cap.open{max-height:none}
+.more{color:var(--brown2);font-size:12.5px;background:none;border:none;padding:4px 0;cursor:pointer}
+.fc{font-size:12px;color:var(--muted);margin-top:6px}
+.note{background:var(--warm);border-radius:8px;padding:8px 10px;font-size:12.5px;margin-top:8px}
+.note b{color:#b06a2a}
+.err{background:#fdeaea;border-radius:8px;padding:8px 10px;font-size:12.5px;margin-top:8px;color:#a33}
+.btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btns button{flex:1 1 auto;min-width:84px;border:none;border-radius:10px;padding:11px 0;font-size:13.5px;font-weight:700;cursor:pointer;min-height:44px}
+.ok{background:#3d8b57;color:#fff}.no{background:#f0e4e0;color:#a33}.ed{background:#f5ead7;color:#7a5c2e}.back{background:#eee;color:#555}
+#btnAll{width:100%;padding:12px;border-radius:12px;border:1px dashed #3d8b57;background:#eef7f0;color:#2c6b42;font-weight:700;margin:2px 0 8px;cursor:pointer;min-height:44px}
+/* Planner FB */
+.fbintro{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--muted);margin-bottom:12px}
+.dayhdr{font-size:13.5px;font-weight:700;color:var(--brown);border-bottom:2px solid var(--line);padding-bottom:4px;margin:16px 2px 8px}
+.fbtop{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.3px}
+.b-post{background:#eaf3ea;color:#4b7a4e}.b-story{background:#f0e7f5;color:#7a4b8a}
+.ftitle{font-size:13px;color:var(--muted);flex:1;min-width:100px}
+.chk{margin-left:auto;font-size:12.5px;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none;display:flex;align-items:center;gap:5px}
+.chk input{transform:scale(1.3);cursor:pointer}
+.pimgs{display:flex;gap:9px;flex-wrap:wrap;margin:8px 0 2px}
+.pimg{width:112px;border-radius:10px}
+.pimg[draggable=true]{cursor:grab}
+.pimg.drag{opacity:.45}
+.pimg .pph{border:1px solid var(--line);border-radius:9px;overflow:hidden;line-height:0;cursor:zoom-in;position:relative}
+.pimg img{width:112px;height:140px;object-fit:cover;display:block}
+.ord{position:absolute;top:4px;left:4px;background:rgba(122,92,46,.92);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;font-variant-numeric:tabular-nums}
+.pctl{display:flex;gap:4px;margin-top:5px}
+.pctl button{flex:1;border:1px solid var(--line);background:#fff;color:var(--brown);border-radius:7px;padding:6px 0;font-size:13px;font-weight:700;cursor:pointer;min-height:38px}
+.pctl button:disabled{opacity:.35;cursor:default}
+.pctl .dl{flex:1.5}
+.reord{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);margin:6px 2px 0}
+.reset{background:none;border:none;color:var(--brown2);font-size:11.5px;cursor:pointer;text-decoration:underline}
+/* editor ảnh (sắp/xóa/thêm) */
+.pimgs.saving{opacity:.55;pointer-events:none}
+.delp{color:#b3392f}
+.addp{flex:0 0 auto;width:112px;min-height:140px;border:1.5px dashed var(--brown2);background:var(--surf);color:var(--brown);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12.5px;font-weight:700;cursor:pointer;line-height:1.2}
+.addp span{font-size:26px;line-height:1}
+.addp:disabled{opacity:.4;cursor:default}
+.frow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.copy{background:var(--brown);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13.5px;font-weight:600;cursor:pointer;min-height:40px}
+.copy.done{background:#4b7a4e}
+.sub{font-size:12px;color:var(--muted)}
+.cmt{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px}
+.cmt .lbl{font-size:12px;font-weight:700;color:var(--brown);margin-bottom:5px}
+/* Ads */
+.adsnote{background:var(--warm);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:10px}
+.adslink{margin:0 2px 12px;font-size:12.5px}
+.explain{color:var(--brown);font-weight:600}
+.muted{color:var(--muted)}
+/* gate */
+#gate{max-width:320px;margin:70px auto;text-align:center;padding:0 16px}
+#gate p{color:var(--brown)}
+#gate input{font-size:26px;letter-spacing:8px;text-align:center;width:200px;padding:10px;border:1px solid #d8c9b8;border-radius:12px}
+#gate button{margin-top:14px;padding:12px 30px;border-radius:12px;border:none;background:var(--brown2);color:#fff;font-weight:700;cursor:pointer}
+/* lightbox */
+#lb{position:fixed;inset:0;background:rgba(25,18,12,.94);display:none;z-index:60;align-items:center;justify-content:center;flex-direction:column}
+#lb.on{display:flex}
+#lb img{max-width:94vw;max-height:82vh;border-radius:10px;box-shadow:0 6px 40px rgba(0,0,0,.5)}
+#lb .lbx{color:#fff;font-size:14px;margin-top:12px;opacity:.85}
+#lb .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:34px;color:#fff;opacity:.7;padding:18px;cursor:pointer;user-select:none}
+#lb .prev{left:0}#lb .next{right:0}
+#lb .dlbig{position:absolute;bottom:54px;left:50%;transform:translateX(-50%);background:#fff;color:var(--brown);border:0;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer}
+:focus-visible{outline:2px solid var(--brown);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+/* DESKTOP ≥900px: 3 cột cạnh nhau, ẩn tabs */
+@media (min-width:900px){
+  .tabs{display:none}
+  header .ttl{font-size:18px}
+  .sumbar{font-size:13px;gap:4px 18px}
+  .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:1280px;margin:0 auto;padding:14px}
+  .col{display:block;background:rgba(255,255,255,.4);border:1px solid var(--line);border-radius:16px;padding:10px 12px}
+  .imgs img,.pimg,.pimg img{}
+}
+</style></head><body>
+
+<div id="gate"><p>Nhập mã PIN</p>
+  <input id="pin" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+  <br><button onclick="enter()">Vào</button>
+  <p id="gerr" style="color:#a33"></p>
+</div>
+
+<div id="app" hidden>
+  <div id="topbar">
+    <header>
+      <span class="ttl">☁️ Êm Như Mây · Bảng điều khiển</span>
+      <button onclick="refresh()">↻ Làm mới</button>
+    </header>
+    <div class="sumbar" id="sum"></div>
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-tab="ig"  role="tab" onclick="tab('ig')">📸 Auto IG <span class="tb" id="tbIg" hidden></span></button>
+      <button class="tab"    data-tab="fb"  role="tab" onclick="tab('fb')">📮 Planner FB <span class="tb" id="tbFb" hidden></span></button>
+      <button class="tab"    data-tab="ads" role="tab" onclick="tab('ads')">📣 Ads <span class="tb" id="tbAds" hidden></span></button>
+    </div>
+  </div>
+  <div class="cols">
+    <section class="col active" data-col="ig"><h2 class="colh">📸 Auto IG <small>máy tự đăng đúng giờ</small></h2><div id="igBody"></div></section>
+    <section class="col"        data-col="fb"><h2 class="colh">📮 Planner FB <small>Gin đăng tay</small></h2><div id="fbBody"></div></section>
+    <section class="col"        data-col="ads"><h2 class="colh">📣 Ads</h2><div id="adsBody"></div></section>
+  </div>
+</div>
+
+<input type="file" id="addfile" accept="image/*" style="display:none" onchange="onAddFile(this)">
+
+<div id="lb" onclick="closeLB()">
+  <span class="nav prev" onclick="event.stopPropagation();stepLB(-1)">‹</span>
+  <img id="lbimg" src="" alt="">
+  <span class="nav next" onclick="event.stopPropagation();stepLB(1)">›</span>
+  <button class="dlbig" onclick="event.stopPropagation();dlLB()">⬇ Tải ảnh này</button>
+  <div class="lbx">chạm nền để đóng · ‹ › chuyển ảnh</div>
+</div>
+
+<script>
+var API = 'https://hxucribafqcxsybovgmc.supabase.co/functions/v1/autopub-review';
+var PIN = sessionStorage.getItem('enm_pin') || '';
+var DATA = {posts:[], ads:[], now:null};
+/* CEO: dán link "trang giải thích Ads" vào đây khi có (để trống = hiện dòng nhắc). */
+var ADS_EXPLAIN_URL = '';
+
+var FMT = {photo:'Ảnh', multi_photo:'Nhiều ảnh', reel:'Reel', story:'Story'};
+var STC = {
+  pending:{c:'amber', t:'⏳ chờ duyệt'},
+  approved:{c:'green', t:'✅ đã duyệt · chờ giờ'},
+  publishing:{c:'blue', t:'🚀 đang đăng'},
+  published:{c:'blue', t:'📤 đã đăng'},
+  fb_scheduled:{c:'teal', t:'🕒 đã vào lịch Meta'},
+  needs_edit:{c:'purple', t:'✏️ chờ sửa'},
+  rejected:{c:'gray', t:'❌ đã bỏ'},
+  failed:{c:'red', t:'⚠️ lỗi'},
+  created_paused:{c:'amber', t:'💤 nháp TẮT đã dựng'},
+  activated_by_owner:{c:'green', t:'▶️ Gin đã bật'}
+};
+
+/* localStorage: chỉ còn tick "đã lên lịch" FB (thứ tự ảnh nay lưu thẳng DB) */
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){ return {}; } }
+function store(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+var FBDONE = load('enm-fb-done');
+
+/* ---- helpers ---- */
+function api(body){ body.pin = PIN;
+  return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){ return r.json().then(function(j){ j._s = r.status; return j; }); }); }
+function esc(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+function money(n){ return (Number(n)||0).toLocaleString('vi-VN')+'đ'; }
+function fmtTime(iso){ if(!iso) return '—'; var d=new Date(iso);
+  return d.toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function timeHM(iso){ if(!iso) return ''; return new Date(iso).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'}); }
+function dayLabel(iso){ if(!iso) return 'Chưa hẹn giờ'; var s=new Date(iso).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'2-digit',month:'2-digit'});
+  return s.charAt(0).toUpperCase()+s.slice(1); }
+function byTime(a,b){ return new Date(a.scheduled_at||0) - new Date(b.scheduled_at||0); }
+function chip(status){ var s=STC[status]||{c:'gray',t:status}; return '<span class="sc sc-'+s.c+'">'+esc(s.t)+'</span>'; }
+function post(id){ id=+id; for(var i=0;i<DATA.posts.length;i++) if(DATA.posts[i].id===id) return DATA.posts[i]; return null; }
+
+/* clipboard với fallback execCommand (máy Gin trên HTTPS vẫn ưu tiên navigator.clipboard) */
+function copyText(txt, btn){
+  var ok=function(){ var o=btn.textContent; btn.textContent='✓ Đã copy'; btn.classList.add('done');
+    setTimeout(function(){ btn.textContent=o; btn.classList.remove('done'); },1400); };
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(txt).then(ok).catch(function(){ fallbackCopy(txt,ok); }); }
+  else fallbackCopy(txt,ok);
+}
+function fallbackCopy(txt,ok){
+  var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); ok(); }catch(e){ alert('Không copy tự động được — bôi đen tay giúp nhé.'); }
+  document.body.removeChild(ta);
+}
+/* tải 1 ảnh: fetch→blob→link tải (fallback mở tab mới) */
+function fname(u){ return decodeURIComponent(u.split('/').pop().split('?')[0]); }
+function dl(url){ var name=fname(url);
+  fetch(url).then(function(r){ if(!r.ok) throw 0; return r.blob(); }).then(function(b){
+    var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+  }).catch(function(){ window.open(url,'_blank'); }); }
+
+/* ---- lightbox ---- */
+var LBSETS={}, LBLIST=[], LBIDX=0;
+function openLB(key, idx){ LBLIST=LBSETS[key]||[]; LBIDX=idx;
+  document.getElementById('lbimg').src=LBLIST[LBIDX]||''; document.getElementById('lb').classList.add('on'); }
+function closeLB(){ document.getElementById('lb').classList.remove('on'); document.getElementById('lbimg').src=''; }
+function stepLB(d){ if(!LBLIST.length) return; LBIDX=(LBIDX+d+LBLIST.length)%LBLIST.length; document.getElementById('lbimg').src=LBLIST[LBIDX]; }
+function dlLB(){ if(LBLIST[LBIDX]) dl(LBLIST[LBIDX]); }
+
+/* ---- gate / decide ---- */
+function enter(){ PIN=document.getElementById('pin').value.trim(); refresh(); }
+function decide(kind, id, dec){
+  var note='';
+  if(dec==='needs_edit'){ note=prompt('Muốn sửa gì? Ghi rõ để đội làm đúng:'); if(note==null||!note.trim()) return; }
+  if(dec==='rejected' && !confirm('Bỏ mục này?')) return;
+  api({action:'decide',kind:kind,id:id,decision:dec,note:note}).then(function(j){ if(j.error) alert('Lỗi: '+j.error); refresh(); });
+}
+function approveAll(){ if(!confirm('Duyệt TẤT CẢ mục đang chờ? Sau bước này máy sẽ tự đăng đúng giờ.')) return;
+  api({action:'approve_all'}).then(function(j){ if(j.error) alert('Lỗi: '+j.error); refresh(); }); }
+function toggleCap(btn){ var c=btn.previousElementSibling; c.classList.toggle('open');
+  btn.textContent = c.classList.contains('open') ? 'thu gọn ▴' : 'xem hết ▾'; }
+
+/* nút hành động cho IG / Ads (giữ đúng luồng trạng thái trang cũ) */
+function btnsHtml(kind, p){ var s=p.status, h='<div class="btns">';
+  function bt(cls,dec,txt){ return '<button class="'+cls+'" onclick="decide(\''+kind+'\','+p.id+',\''+dec+'\')">'+txt+'</button>'; }
+  if(s==='pending') h+=bt('ok','approved','✅ Duyệt')+bt('ed','needs_edit','✏️ Sửa')+bt('no','rejected','❌ Bỏ');
+  else if(s==='needs_edit') h+=bt('ok','approved','✅ Duyệt luôn')+bt('no','rejected','❌ Bỏ');
+  else if(s==='approved') h+=bt('back','pending','↩︎ Rút duyệt')+bt('ed','needs_edit','✏️ Sửa')+bt('no','rejected','❌ Bỏ');
+  else if(s==='fb_scheduled') h+=bt('no','rejected','❌ Hủy đăng (gỡ khỏi lịch)');
+  else if(s==='failed') h+=bt('ok','approved','🔁 Thử lại')+bt('no','rejected','❌ Bỏ');
+  else if(s==='rejected') h+=bt('back','pending','↩︎ Khôi phục về chờ duyệt');
+  else if(s==='created_paused' && kind==='ad') h+=bt('ok','activated_by_owner','▶️ Tôi đã bật tay')+bt('no','rejected','❌ Bỏ');
+  h+='</div>'; return (s==='publishing'||s==='published'||s==='activated_by_owner') ? '' : h; }
+
+/* thumbnails (IG / Ads): chạm → lightbox, video → mở link */
+function thumbStrip(list, key){
+  list=list||[]; if(!list.length) return '';
+  LBSETS[key]=list.map(function(m){ return m.url; });
+  var h='<div class="imgs">';
+  list.forEach(function(m,i){
+    var img=m.thumb_url||m.url;
+    if((m.kind||'')==='video') h+='<a class="th" href="'+esc(m.url)+'" target="_blank" rel="noopener"><img src="'+esc(img)+'" loading="lazy" alt=""><span class="play">▶</span></a>';
+    else h+='<a class="th" href="javascript:void(0)" onclick="openLB(\''+key+'\','+i+')"><img src="'+esc(img)+'" loading="lazy" alt=""></a>';
+  });
+  return h+'</div>';
+}
+
+/* ============ QUẢN LÝ ẢNH (sắp thứ tự · xóa · thêm) — CHỈ bài runner không đăng ============ */
+var EDITABLE_UI = ['pending','needs_edit','rejected','failed'];  // khớp EDITABLE ở edge function
+var IMG_FMT = ['photo','multi_photo'];
+var SAVING = {};      // SAVING[id]=true khi đang lưu (khóa thao tác chồng nhau)
+var UNDO = {};        // UNDO[id]=mảng ảnh trước đó (hoàn tác)
+var ADD_TARGET = null;
+var DRAG = null;
+
+function canEditMedia(p){ return EDITABLE_UI.indexOf(p.status)>=0 && IMG_FMT.indexOf(p.format)>=0; }
+function reRenderFor(p){ if(p.channel==='ig') renderIG(); else renderFB(); }
+
+function setMedia(id, media, expected){ return api({action:'set_media', id:id, media:media, expected_updated_at:expected}); }
+function addMediaApi(id, b64, expected){ return api({action:'add_media', id:id, content_base64:b64, expected_updated_at:expected}); }
+
+/* editor ảnh 1 bài — ro=true: chỉ xem + tải (bài không sửa được / story) */
+function mediaEditor(p, key, ro){
+  var media = p.media || [];
+  LBSETS[key] = media.map(function(m){ return m.url; });
+  var multi = media.length>1;
+  var saving = !!SAVING[p.id];
+  var cap = p.channel==='ig' ? 10 : 30;
+  var h = '<div class="pimgs'+(saving?' saving':'')+'">';
+  media.forEach(function(m,i){
+    var isVid = (m.kind||'')==='video';
+    h += '<div class="pimg" data-pid="'+p.id+'" data-i="'+i+'"'+((!ro&&multi&&!saving)?' draggable="true"':'')+'>'
+      + '<div class="pph" data-lb="'+key+'" data-lbi="'+i+'"><img src="'+esc(m.thumb_url||m.url)+'" loading="lazy" alt="">'
+      + (multi?'<span class="ord">'+(i+1)+'</span>':'')
+      + (isVid?'<span class="play">▶</span>':'') + '</div>'
+      + '<div class="pctl">'
+      + ((!ro&&multi)?'<button data-mv="up" data-pid="'+p.id+'" data-i="'+i+'"'+((i===0||saving)?' disabled':'')+' aria-label="Lùi">◀</button>':'')
+      + ((!ro&&multi)?'<button data-mv="down" data-pid="'+p.id+'" data-i="'+i+'"'+((i===media.length-1||saving)?' disabled':'')+' aria-label="Tiến">▶</button>':'')
+      + '<button class="dl" data-dl="'+esc(m.url)+'">⬇</button>'
+      + (!ro?'<button class="delp" data-del="'+p.id+'" data-i="'+i+'"'+((media.length<=1||saving)?' disabled':'')+' aria-label="Xóa">🗑</button>':'')
+      + '</div></div>';
+  });
+  if(!ro) h += '<button class="addp" data-add="'+p.id+'"'+((media.length>=cap||saving)?' disabled':'')+'><span>＋</span>Thêm ảnh</button>';
+  h += '</div>';
+  if(!ro){
+    h += '<div class="reord">'
+      + (saving ? '<span>💾 đang lưu…</span>'
+                : '<span>↕ Kéo (máy tính) · ◀▶ đổi thứ tự · 🗑 xóa · ＋ thêm — máy đăng đúng thứ tự này</span>')
+      + ((UNDO[p.id] && !saving) ? ' <button class="reset" data-undo="'+p.id+'">↺ hoàn tác</button>' : '')
+      + '</div>';
+  }
+  return h;
+}
+
+/* áp mảng ảnh mới (sắp/xóa): optimistic + khóa + lưu DB (chống ghi-đè-cũ bằng expected_updated_at) */
+function applyMedia(id, newMedia){
+  if(SAVING[id]) return;
+  var p=post(id); if(!p) return;
+  if(newMedia.length<1){ alert('Phải còn ít nhất 1 ảnh.'); return; }
+  UNDO[id]=(p.media||[]).slice();
+  var expected=p.updated_at;
+  p.media=newMedia; p.format=(newMedia.length===1?'photo':'multi_photo');
+  SAVING[id]=true; reRenderFor(p);
+  setMedia(id, newMedia, expected).then(function(j){
+    SAVING[id]=false;
+    if(!j || j.error){
+      delete UNDO[id];
+      alert('Không lưu được: '+(j&&j.error==='stale' ? 'bài vừa đổi ở nơi khác — đã tải lại' : (j&&j.error)||'lỗi mạng'));
+      refresh(); return;
+    }
+    if(j.updated_at) p.updated_at=j.updated_at;
+    reRenderFor(p);
+    setTimeout(function(){ if(UNDO[id]){ delete UNDO[id]; var pp=post(id); if(pp) reRenderFor(pp);} }, 7000);
+  });
+}
+function moveMedia(id, i, dir){
+  var p=post(id); if(!p||SAVING[id]) return;
+  var media=(p.media||[]).slice(); var j=i+dir;
+  if(j<0||j>=media.length) return;
+  var t=media[i]; media[i]=media[j]; media[j]=t;
+  applyMedia(id, media);
+}
+function deletePhoto(id, i){
+  var p=post(id); if(!p||SAVING[id]) return;
+  var media=(p.media||[]);
+  if(media.length<=1){ alert('Không xóa được ảnh cuối — bài phải còn ít nhất 1 ảnh.'); return; }
+  if(!confirm('Xóa ảnh này khỏi bài?')) return;
+  var nm=media.slice(); nm.splice(i,1);
+  applyMedia(id, nm);
+}
+function doUndo(id){
+  if(SAVING[id] || !UNDO[id]) return;
+  var prev=UNDO[id]; delete UNDO[id];
+  applyMedia(id, prev);
+}
+function startAdd(id){ if(SAVING[id]) return; ADD_TARGET=id; document.getElementById('addfile').click(); }
+function onAddFile(input){
+  var f = input.files && input.files[0];
+  input.value='';
+  if(!f || ADD_TARGET==null) return;
+  var id=ADD_TARGET; ADD_TARGET=null;
+  var p=post(id); if(!p || SAVING[id]) return;
+  SAVING[id]=true; reRenderFor(p);
+  prepImage(f).then(function(b64){
+    return addMediaApi(id, b64, p.updated_at);
+  }).then(function(j){
+    SAVING[id]=false;
+    if(!j || j.error){
+      alert('Không thêm được ảnh: '+(j&&j.error==='stale' ? 'bài vừa đổi — đã tải lại' : (j&&j.error)||'lỗi mạng'));
+      refresh(); return;
+    }
+    refresh();   // tải lại: có ảnh mới + thứ tự + updated_at (xử đúng cả trùng ảnh)
+  }).catch(function(e){
+    SAVING[id]=false;
+    var pp=post(id); if(pp) reRenderFor(pp);
+    alert(e && e.message ? e.message : 'Ảnh không đọc được (HEIC?) — chọn ảnh JPEG.');
+  });
+}
+
+/* nén + xoay đúng EXIF → JPEG base64 (chặn ảnh trống HEIC, không upload ảnh hỏng) */
+function prepImage(file){
+  return new Promise(function(resolve, reject){
+    function draw(src, w, h){
+      if(!w || !h){ reject(new Error('Ảnh không đọc được (HEIC?) — chọn ảnh JPEG.')); return; }
+      var max=1600, sc=Math.min(1, max/Math.max(w,h));
+      var cw=Math.max(1,Math.round(w*sc)), ch=Math.max(1,Math.round(h*sc));
+      var cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+      var ctx=cv.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,cw,ch);
+      try{ ctx.drawImage(src,0,0,cw,ch); }catch(e){ reject(new Error('Ảnh không vẽ được — chọn ảnh JPEG.')); return; }
+      var durl;
+      try{ durl=cv.toDataURL('image/jpeg',0.85); }catch(e){ reject(new Error('Ảnh lỗi khi nén.')); return; }
+      if(!durl || durl.length<200){ reject(new Error('Ảnh không đọc được — chọn ảnh JPEG.')); return; }
+      resolve(durl);
+    }
+    if(window.createImageBitmap){
+      createImageBitmap(file, {imageOrientation:'from-image'}).then(function(bmp){
+        draw(bmp, bmp.width, bmp.height);
+      }).catch(function(){ viaImg(); });
+    } else viaImg();
+    function viaImg(){
+      var url=URL.createObjectURL(file);
+      var img=new Image();
+      img.onload=function(){ draw(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(url); };
+      img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error('Ảnh không đọc được (HEIC?) — chọn ảnh JPEG.')); };
+      img.src=url;
+    }
+  });
+}
+
+/* ============ AUTO IG ============ */
+function igCard(p){
+  var h='<div class="card"><div class="meta">'
+    + '<span class="chchip ig">IG</span>'
+    + '<span class="fmt">'+esc(FMT[p.format]||p.format)+'</span>'
+    + '<span class="tm">'+esc(fmtTime(p.scheduled_at))+'</span>'
+    + chip(p.status)
+    + '<span class="id">#'+p.id+'</span></div>'
+    + (canEditMedia(p) ? mediaEditor(p,'ig'+p.id,false) : thumbStrip(p.media,'ig'+p.id))
+    + '<div class="cap">'+esc(p.caption)+'</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
+  if(p.first_comment_text) h+='<div class="fc">💬 comment bảng size — máy tự gắn sau khi đăng</div>';
+  if(p.status==='needs_edit' && p.edit_note) h+='<div class="note">✏️ Gin yêu cầu: '+esc(p.edit_note)+'</div>';
+  if(p.error) h+='<div class="err">'+esc(p.error)+'</div>';
+  return h + btnsHtml('post',p) + '</div>';
+}
+function renderIG(){
+  var host=document.getElementById('igBody');
+  var ig=DATA.posts.filter(function(p){ return p.channel==='ig'; });
+  var pending=ig.filter(function(p){ return p.status==='pending'; }).sort(byTime);
+  var upcoming=ig.filter(function(p){ return ['approved','publishing'].indexOf(p.status)>=0; }).sort(byTime);
+  var pub=ig.filter(function(p){ return p.status==='published'; }).sort(byTime).reverse();
+  var other=ig.filter(function(p){ return ['failed','rejected','needs_edit'].indexOf(p.status)>=0; }).sort(byTime);
+  var h='';
+  h+='<div class="sech">⏳ Chờ Gin duyệt</div>';
+  if(pending.length>=2) h+='<button id="btnAll" onclick="approveAll()">✅ Duyệt tất cả mục chờ</button>';
+  h+= pending.length ? pending.map(igCard).join('') : '<div class="empty">Không có bài IG chờ duyệt.</div>';
+  h+='<div class="sech">🕒 Sắp lên · đã duyệt (máy tự đăng)</div>';
+  h+= upcoming.length ? upcoming.map(igCard).join('') : '<div class="empty">Trống.</div>';
+  h+='<div class="sech">📤 Đã đăng</div>';
+  h+= pub.length ? pub.slice(0,12).map(igCard).join('') : '<div class="empty">Chưa có.</div>';
+  if(other.length){ h+='<div class="sech">⚠️ Lỗi / Đang sửa / Đã bỏ</div>'+other.map(igCard).join(''); }
+  host.innerHTML=h;
+}
+
+/* ============ PLANNER FB ============ */
+function fbCard(p){
+  var isStory=p.format==='story';
+  var media=p.media||[];
+  var done=!!FBDONE[p.id];
+  var key='fb'+p.id; LBSETS[key]=media.map(function(m){ return m.url; });
+  var h='<div class="card'+(done?' done':'')+'">';
+  h+='<div class="fbtop"><span class="tm">'+esc(timeHM(p.scheduled_at))+'</span>'
+    + '<span class="badge '+(isStory?'b-story':'b-post')+'">'+(isStory?'Tin (story)':'Bài ảnh')+'</span>'
+    + '<span class="ftitle">'+esc(p.batch||('#'+p.id))+'</span>'
+    + '<label class="chk"><input type="checkbox" data-done="'+p.id+'"'+(done?' checked':'')+'>đã lên lịch</label></div>';
+  if(isStory){
+    h+='<div class="note"><b>Chỉ đăng ẢNH — không caption.</b> Story bản có chữ (Thương hiệu render). Tải ảnh rồi đăng Tin trên Facebook.</div>';
+  } else {
+    h+='<div class="cap">'+esc(p.caption)+'</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>'
+      + '<div class="frow"><button class="copy" data-copy="cap" data-pid="'+p.id+'">📋 Copy caption</button>'
+      + '<span class="sub">'+media.length+' ảnh — chạm để phóng to, ⬇ để tải</span></div>';
+  }
+  // ảnh — sửa được (sắp/xóa/thêm) hay chỉ xem (story / bài không sửa được)
+  h+= canEditMedia(p) ? mediaEditor(p,key,false) : mediaEditor(p,key,true);
+  if(!isStory && p.first_comment_text){
+    h+='<div class="cmt"><div class="lbl">💬 Bình luận đầu (đăng sau khi bài lên, kèm ảnh bảng size):</div>'
+      + '<div class="cap">'+esc(p.first_comment_text)+'</div>'
+      + '<div class="frow"><button class="copy" data-copy="cmt" data-pid="'+p.id+'">📋 Copy bình luận</button>';
+    if(p.first_comment_photo_url){
+      var ck='fbc'+p.id; LBSETS[ck]=[p.first_comment_photo_url];
+      h+='<div class="pimg" style="width:100px"><div class="pph" data-lb="'+ck+'" data-lbi="0"><img src="'+esc(p.first_comment_photo_url)+'" loading="lazy" alt=""></div>'
+        + '<div class="pctl"><button class="dl" data-dl="'+esc(p.first_comment_photo_url)+'">⬇ Bảng size</button></div></div>';
+    }
+    h+='</div></div>';
+  }
+  return h+'</div>';
+}
+function renderFB(){
+  var host=document.getElementById('fbBody');
+  var list=DATA.posts.filter(function(p){ return p.channel==='fb' && p.status!=='published'; }).sort(byTime);
+  var intro='<div class="fbintro">Facebook máy chưa đăng (app chưa Live) → <b>Gin đăng tay</b> trên Business Suite Planner. '
+    + 'Copy caption · tải ảnh · sắp thứ tự ảnh · tick "đã lên lịch" (lưu trên máy này).</div>';
+  if(!list.length){ host.innerHTML=intro+'<div class="empty">Không có bài FB cần đăng tay.</div>'; return; }
+  var cur='', h=intro;
+  list.forEach(function(p){
+    var d=dayLabel(p.scheduled_at);
+    if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; }
+    h+=fbCard(p);
+  });
+  host.innerHTML=h;
+}
+
+/* ============ ADS ============ */
+function adCard(a){
+  var cr=a.creative||{};
+  var h='<div class="card"><div class="meta"><span class="chchip ads">ADS</span>'
+    + '<span class="tm">'+esc(a.name||'—')+'</span>'+chip(a.status)+'<span class="id">#'+a.id+'</span></div>';
+  if(cr.image_url) h+=thumbStrip([{url:cr.image_url}],'ad'+a.id);
+  h+='<div class="cap">Mục tiêu: '+esc(a.objective||'—')+'\nĐối tượng: '+esc(a.audience||'—')
+    + '\nNgân sách: '+money(a.budget_vnd)+'/ngày\nLịch: '+esc(a.schedule_note||'—')
+    + (cr.primary_text ? '\n\nNội dung:\n'+esc(cr.primary_text) : '') + '</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
+  if(a.status==='needs_edit' && a.edit_note) h+='<div class="note">✏️ Gin yêu cầu: '+esc(a.edit_note)+'</div>';
+  if(a.error) h+='<div class="err">'+esc(a.error)+'</div>';
+  return h + btnsHtml('ad',a) + '</div>';
+}
+function renderAds(){
+  var host=document.getElementById('adsBody');
+  var A=DATA.ads.slice().sort(function(a,b){ return a.id-b.id; });
+  var link = ADS_EXPLAIN_URL
+    ? '<a class="explain" href="'+esc(ADS_EXPLAIN_URL)+'" target="_blank" rel="noopener">ℹ️ Trang giải thích Ads</a>'
+    : '<span class="explain muted">ℹ️ (chưa gắn link trang giải thích Ads)</span>';
+  host.innerHTML =
+      '<div class="adsnote">💰 Duyệt trên trang = máy chỉ <b>DỰNG NHÁP TẮT</b> trong Ads Manager. '
+    + 'Bật chạy = Gin bấm tay rồi bấm "▶️ Tôi đã bật tay". <b>Máy KHÔNG bao giờ tự tiêu tiền.</b></div>'
+    + '<div class="adslink">'+link+'</div>'
+    + (A.length ? A.map(adCard).join('') : '<div class="empty">Chưa có ads nào.</div>');
+}
+
+/* ============ summary + tabs ============ */
+function adsSummary(A){
+  if(!A.length) return 'chưa có';
+  var c={}; A.forEach(function(a){ c[a.status]=(c[a.status]||0)+1; });
+  var parts=[];
+  if(c.pending) parts.push(c.pending+' chờ duyệt');
+  if(c.needs_edit) parts.push(c.needs_edit+' chờ sửa');
+  if(c.created_paused) parts.push(c.created_paused+' nháp tắt');
+  if(c.activated_by_owner) parts.push(c.activated_by_owner+' đang chạy');
+  if(c.approved) parts.push(c.approved+' đã duyệt');
+  if(!parts.length) parts.push(A.length+' mục');
+  return parts.join(' · ');
+}
+function renderSummary(){
+  var P=DATA.posts, A=DATA.ads;
+  var need = P.filter(function(p){ return ['pending','needs_edit'].indexOf(p.status)>=0; }).length
+           + A.filter(function(a){ return ['pending','needs_edit'].indexOf(a.status)>=0; }).length;
+  var igUp = P.filter(function(p){ return p.channel==='ig' && p.status==='published'; }).length;
+  var fbList = P.filter(function(p){ return p.channel==='fb' && p.status!=='published'; });
+  var fbLeft = fbList.filter(function(p){ return !FBDONE[p.id]; }).length;
+  document.getElementById('sum').innerHTML =
+      '<span class="it">⏳ chờ duyệt <b class="num">'+need+'</b></span>'
+    + '<span class="it">📸 IG đã lên <b class="num">'+igUp+'</b></span>'
+    + '<span class="it">📮 FB cần đăng tay <b class="num">'+fbLeft+'</b></span>'
+    + '<span class="it">📣 Ads: <b>'+esc(adsSummary(A))+'</b></span>'
+    + '<span class="it muted">· cập nhật '+esc(fmtTime(DATA.now))+'</span>';
+  setBadge('tbIg', P.filter(function(p){ return p.channel==='ig' && p.status==='pending'; }).length);
+  setBadge('tbFb', fbLeft);
+  setBadge('tbAds', A.filter(function(a){ return ['pending','needs_edit'].indexOf(a.status)>=0; }).length);
+}
+function setBadge(id, n){ var el=document.getElementById(id); el.textContent=n; el.hidden = !n; }
+function tab(name){
+  var els=document.querySelectorAll('.col'); for(var i=0;i<els.length;i++) els[i].classList.toggle('active', els[i].getAttribute('data-col')===name);
+  var ts=document.querySelectorAll('.tab'); for(var j=0;j<ts.length;j++) ts[j].classList.toggle('on', ts[j].getAttribute('data-tab')===name);
+}
+
+/* ---- delegation dùng cho CẢ igBody & fbBody: sửa ảnh · copy · tải · lightbox · tick · kéo-thả ---- */
+function wireBody(host){
+  host.addEventListener('click', function(e){
+    var el;
+    if((el=e.target.closest('[data-dl]'))){ dl(el.getAttribute('data-dl')); return; }
+    if((el=e.target.closest('[data-mv]'))){ moveMedia(+el.getAttribute('data-pid'), +el.getAttribute('data-i'), el.getAttribute('data-mv')==='up'?-1:1); return; }
+    if((el=e.target.closest('[data-del]'))){ deletePhoto(+el.getAttribute('data-del'), +el.getAttribute('data-i')); return; }
+    if((el=e.target.closest('[data-add]'))){ startAdd(+el.getAttribute('data-add')); return; }
+    if((el=e.target.closest('[data-undo]'))){ doUndo(+el.getAttribute('data-undo')); return; }
+    if((el=e.target.closest('[data-copy]'))){ var p=post(el.getAttribute('data-pid')); if(!p) return;
+      copyText(el.getAttribute('data-copy')==='cap' ? (p.caption||'') : (p.first_comment_text||''), el); return; }
+    if((el=e.target.closest('[data-lb]'))){ openLB(el.getAttribute('data-lb'), +el.getAttribute('data-lbi')); return; }
+  });
+  host.addEventListener('change', function(e){
+    var cb=e.target.closest('[data-done]'); if(!cb) return;
+    var id=+cb.getAttribute('data-done'); if(cb.checked) FBDONE[id]=true; else delete FBDONE[id];
+    store('enm-fb-done',FBDONE); renderFB(); renderSummary();
+  });
+  host.addEventListener('dragstart', function(e){ var pim=e.target.closest('.pimg[draggable=true]'); if(!pim) return;
+    DRAG={pid:+pim.getAttribute('data-pid'), i:+pim.getAttribute('data-i')}; e.dataTransfer.effectAllowed='move'; pim.classList.add('drag'); });
+  host.addEventListener('dragend', function(e){ var pim=e.target.closest('.pimg'); if(pim) pim.classList.remove('drag'); DRAG=null; });
+  host.addEventListener('dragover', function(e){ if(e.target.closest('.pimg')) e.preventDefault(); });
+  host.addEventListener('drop', function(e){ var tgt=e.target.closest('.pimg'); if(!tgt||!DRAG) return; e.preventDefault();
+    if(+tgt.getAttribute('data-pid')!==DRAG.pid){ DRAG=null; return; }   // chỉ đổi trong cùng 1 bài
+    var to=+tgt.getAttribute('data-i'), from=DRAG.i, pid=DRAG.pid; DRAG=null;
+    if(to===from) return;
+    var p=post(pid); if(!p) return; var arr=(p.media||[]).slice();
+    var mv=arr.splice(from,1)[0]; arr.splice(to,0,mv);
+    applyMedia(pid, arr); });
+}
+
+/* ---- refresh ---- */
+function refresh(){
+  api({action:'list'}).then(function(j){
+    if(j._s===401){ document.getElementById('gerr').textContent='PIN sai.'; sessionStorage.removeItem('enm_pin'); return; }
+    if(j._s===429){ document.getElementById('gerr').textContent='Sai nhiều lần — khóa 15 phút.'; return; }
+    if(j.error){ alert(j.error); return; }
+    sessionStorage.setItem('enm_pin', PIN);
+    document.getElementById('gate').hidden=true; document.getElementById('app').hidden=false;
+    DATA={posts:j.posts||[], ads:j.ads||[], now:j.now};
+    LBSETS={};
+    renderSummary(); renderIG(); renderFB(); renderAds();
+  });
+}
+
+document.getElementById('pin').addEventListener('keydown', function(e){ if(e.key==='Enter') enter(); });
+wireBody(document.getElementById('igBody'));
+wireBody(document.getElementById('fbBody'));
+if(PIN) refresh();
+setInterval(function(){
+  if(document.getElementById('app').hidden) return;
+  for(var k in SAVING){ if(SAVING[k]) return; }   // đang lưu ảnh → đừng tải đè
+  refresh();
+}, 60000);
+</script>
+</body></html>
