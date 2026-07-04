@@ -252,10 +252,11 @@ var STC = {
   activated_by_owner:{c:'green', t:'▶️ Gin đã bật'}
 };
 
-/* localStorage: chỉ còn tick "đã lên lịch" FB (thứ tự ảnh nay lưu thẳng DB) */
+/* tick "đã lên lịch" FB nay lưu DB (autopub_posts.owner_scheduled) → ĐỒNG BỘ mọi máy.
+   localStorage chỉ còn để DI TRÚ 1 lần tick cũ (enm-fb-done) lên DB (xem migrateFbDone). */
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){ return {}; } }
 function store(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
-var FBDONE = load('enm-fb-done');
+function fbDone(p){ return !!(p && p.owner_scheduled); }
 
 /* ---- helpers ---- */
 function api(body){ body.pin = PIN;
@@ -623,7 +624,7 @@ function fbCard(p){
   if(viewOf('fb',p.id)==='mini') return miniCard(p);
   var isStory=p.format==='story';
   var media=p.media||[];
-  var done=!!FBDONE[p.id];
+  var done=fbDone(p);
   var key='fb'+p.id; LBSETS[key]=media.map(function(m){ return m.url; });
   var h='<div class="card'+(done?' done':'')+'">';
   h+='<div class="fbtop"><span class="tm">'+esc(timeHM(p.scheduled_at))+'</span>'
@@ -663,9 +664,9 @@ function renderFB(){
   var srt=function(a,b){ var d=byTime(a,b); return SORT.fb==='asc'?d:-d; };
   var np=flt.filter(function(p){ return p.status!=='published'; });
   // 3 nhóm theo vòng đời (Gin chốt 4/7): ①chưa lên lịch (kèm ⚠️ trễ nếu quá giờ) → ②đã lên lịch chưa tới giờ → ③đã lên lịch + QUA giờ (ẩn)
-  var active=np.filter(function(p){ return !FBDONE[p.id]; }).sort(srt);
-  var schedWait=np.filter(function(p){ return !!FBDONE[p.id] && !isLate(p); }).sort(srt);
-  var schedPast=np.filter(function(p){ return !!FBDONE[p.id] && isLate(p); }).sort(srt);
+  var active=np.filter(function(p){ return !fbDone(p); }).sort(srt);
+  var schedWait=np.filter(function(p){ return fbDone(p) && !isLate(p); }).sort(srt);
+  var schedPast=np.filter(function(p){ return fbDone(p) && isLate(p); }).sort(srt);
   var pub=flt.filter(function(p){ return p.status==='published'; }).sort(byTime).reverse();
   var intro='<div class="fbintro">Facebook máy chưa đăng (app chưa Live) → <b>Gin đăng tay</b> trên Business Suite Planner. '
     + 'Copy caption · tải ảnh · sắp/thêm/xóa ảnh · tick "đã lên lịch" (lưu trên máy này).</div>';
@@ -746,7 +747,7 @@ function renderSummary(){
            + A.filter(function(a){ return ['pending','needs_edit'].indexOf(a.status)>=0; }).length;
   var igUp = P.filter(function(p){ return p.channel==='ig' && p.status==='published'; }).length;
   var fbList = P.filter(function(p){ return p.channel==='fb' && p.status!=='published'; });
-  var fbLeft = fbList.filter(function(p){ return !FBDONE[p.id]; }).length;
+  var fbLeft = fbList.filter(function(p){ return !fbDone(p); }).length;
   document.getElementById('sum').innerHTML =
       '<span class="it">⏳ chờ duyệt <b class="num">'+need+'</b></span>'
     + '<span class="it">📸 IG đã lên <b class="num">'+igUp+'</b></span>'
@@ -784,8 +785,12 @@ function wireBody(host){
   });
   host.addEventListener('change', function(e){
     var cb=e.target.closest('[data-done]'); if(!cb) return;
-    var id=+cb.getAttribute('data-done'); if(cb.checked) FBDONE[id]=true; else delete FBDONE[id];
-    store('enm-fb-done',FBDONE); renderFB(); renderSummary();
+    var id=+cb.getAttribute('data-done'); var val=cb.checked; var p=post(id);
+    if(p) p.owner_scheduled=val;                          // đổi tức thì (optimistic)
+    renderFB(); renderSummary();
+    api({action:'set_scheduled', ids:[id], value:val}).then(function(j){
+      if(j.error){ if(p) p.owner_scheduled=!val; renderFB(); renderSummary(); alert('Lỗi lưu lịch: '+(j.error||'')); }
+    });
   });
   host.addEventListener('dragstart', function(e){ var pim=e.target.closest('.pimg[draggable=true]'); if(!pim) return;
     DRAG={pid:+pim.getAttribute('data-pid'), i:+pim.getAttribute('data-i')}; e.dataTransfer.effectAllowed='move'; pim.classList.add('drag'); });
@@ -800,6 +805,21 @@ function wireBody(host){
     applyMedia(pid, arr); });
 }
 
+/* DI TRÚ 1 LẦN: đẩy tick "đã lên lịch" FB cũ (localStorage máy NÀY) lên DB → union, KHÔNG xóa cái đã có.
+   Chạy trên đúng máy Gin đang giữ tick → tick được bảo toàn, các máy khác đồng bộ theo. */
+function migrateFbDone(){
+  try{
+    if(localStorage.getItem('enm-fb-done-migrated')) return;
+    var old=load('enm-fb-done');
+    var ids=Object.keys(old).filter(function(k){ return old[k]; }).map(Number).filter(Boolean);
+    var need=ids.filter(function(id){ var p=post(id); return p && p.channel==='fb' && !p.owner_scheduled; });
+    if(!need.length){ localStorage.setItem('enm-fb-done-migrated','1'); return; }
+    api({action:'set_scheduled', ids:need, value:true}).then(function(j){
+      if(j && !j.error){ localStorage.setItem('enm-fb-done-migrated','1'); refresh(); }
+    });
+  }catch(e){}
+}
+
 /* ---- refresh ---- */
 function refresh(){
   api({action:'list'}).then(function(j){
@@ -811,6 +831,7 @@ function refresh(){
     DATA={posts:j.posts||[], ads:j.ads||[], now:j.now};
     LBSETS={};
     renderSummary(); renderIG(); renderFB(); renderAds();
+    migrateFbDone();
   });
 }
 
