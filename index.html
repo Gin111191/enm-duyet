@@ -68,7 +68,7 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 #btnAll{width:100%;padding:12px;border-radius:12px;border:1px dashed #3d8b57;background:#eef7f0;color:#2c6b42;font-weight:700;margin:2px 0 8px;cursor:pointer;min-height:44px}
 /* Planner FB */
 .fbintro{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--muted);margin-bottom:12px}
-.dayhdr{font-size:13.5px;font-weight:700;color:var(--brown);border-bottom:2px solid var(--line);padding-bottom:4px;margin:16px 2px 8px}
+.dayhdr{font-size:13px;font-weight:800;color:var(--brown);background:var(--warm);border:1px solid var(--line);border-left:4px solid var(--brown2);border-radius:8px;padding:8px 12px;margin:18px 2px 10px;letter-spacing:.2px}
 .fbtop{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px}
 .badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.3px}
 .b-post{background:#eaf3ea;color:#4b7a4e}.b-story{background:#f0e7f5;color:#7a4b8a}
@@ -270,6 +270,11 @@ function dayLabel(iso){ if(!iso) return 'Chưa hẹn giờ'; var s=new Date(iso)
   return s.charAt(0).toUpperCase()+s.slice(1); }
 function byTime(a,b){ return new Date(a.scheduled_at||0) - new Date(b.scheduled_at||0); }
 function chip(status){ var s=STC[status]||{c:'gray',t:status}; return '<span class="sc sc-'+s.c+'">'+esc(s.t)+'</span>'; }
+/* nhãn theo KÊNH: bài FB status 'rejected' = "park" để máy KHÔNG tự đăng (Gin đăng tay) → hiện "chưa lên lịch", KHÔNG phải "đã bỏ". IG vẫn "đã bỏ". */
+function statusLabel(ch,status){ if(ch==='fb'&&status==='rejected') return {c:'amber',t:'📋 chưa lên lịch'}; return STC[status]||{c:'gray',t:status}; }
+function chip2(ch,status){ var s=statusLabel(ch,status); return '<span class="sc sc-'+s.c+'">'+esc(s.t)+'</span>'; }
+/* render danh sách, chèn tiêu đề NGÀY (highlight) mỗi khi đổi ngày — dùng chung IG/FB/Ads. dateOf: hàm lấy mốc ngày (mặc định scheduled_at; ads truyền created_at) */
+function byDayCards(list, cardFn, dateOf){ var h='', cur=''; list.forEach(function(p){ var d=dayLabel(dateOf?dateOf(p):p.scheduled_at); if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; } h+=cardFn(p); }); return h; }
 function post(id){ id=+id; for(var i=0;i<DATA.posts.length;i++) if(DATA.posts[i].id===id) return DATA.posts[i]; return null; }
 
 /* clipboard với fallback execCommand (máy Gin trên HTTPS vẫn ưu tiên navigator.clipboard) */
@@ -368,8 +373,8 @@ function isLate(p){ return p.scheduled_at && Date.parse(p.scheduled_at) < server
 function toolbar(ch, statuses, counts){
   var h='<div class="tools">';
   statuses.forEach(function(s){
-    var st=STC[s]||{t:s}; var on=FILTER[ch]===s;
-    h+='<button class="fchip'+(on?' on':'')+'" data-filter="'+ch+'" data-st="'+s+'">'+st.t+(counts[s]?' · '+counts[s]:'')+'</button>';
+    var st=statusLabel(ch,s); var on=FILTER[ch]===s;
+    h+='<button class="fchip'+(on?' on':'')+'" data-filter="'+ch+'" data-st="'+s+'">'+esc(st.t)+(counts[s]?' · '+counts[s]:'')+'</button>';
   });
   h+='<span class="tspace"></span>'
     +'<button class="tbtn" data-sort="'+ch+'">⇅ '+(SORT[ch]==='asc'?'sớm→muộn':'muộn→sớm')+'</button>'
@@ -381,7 +386,7 @@ function miniCard(p){
   var media=p.media||[]; var u0=media.length?(media[0].thumb_url||media[0].url):'';
   return '<div class="card mini">'
     +(u0?'<div class="mthumb" style="background-image:url(\''+esc(u0)+'\')"></div>':'<div class="mthumb"></div>')
-    +'<div class="minfo"><div><span class="bcode">'+esc(p.batch||('#'+p.id))+'</span> '+chip(p.status)+(isLate(p)&&p.status!=='published'?' <span class="latebadge">⚠️ trễ</span>':'')+'</div>'
+    +'<div class="minfo"><div><span class="bcode">'+esc(p.batch||('#'+p.id))+'</span> '+chip2(p.channel,p.status)+(isLate(p)&&p.status!=='published'?' <span class="latebadge">⚠️ trễ</span>':'')+'</div>'
     +'<div class="msub">'+esc(timeHM(p.scheduled_at))+' · '+media.length+' ảnh · '+(p.format==='story'?'story':'bài ảnh')+'</div></div>'
     +'<button class="mexp" data-viewpost="'+p.channel+'" data-pid="'+p.id+'" title="Mở đầy đủ">⤢</button></div>';
 }
@@ -604,9 +609,9 @@ function renderIG(){
   var h=toolbar('ig', Object.keys(counts), counts);
   h+='<div class="sech">⏳ Chờ Gin duyệt</div>';
   if(pending.length>=2) h+='<button id="btnAll" onclick="approveAll()">✅ Duyệt tất cả mục chờ</button>';
-  h+= pending.length ? pending.map(igCard).join('') : '<div class="empty">Không có bài IG chờ duyệt.</div>';
+  h+= pending.length ? byDayCards(pending, igCard) : '<div class="empty">Không có bài IG chờ duyệt.</div>';
   h+='<div class="sech">🕒 Sắp lên · đã duyệt (máy tự đăng)</div>';
-  h+= upcoming.length ? upcoming.map(igCard).join('') : '<div class="empty">Trống.</div>';
+  h+= upcoming.length ? byDayCards(upcoming, igCard) : '<div class="empty">Trống.</div>';
   if(other.length){ h+='<div class="sech">⚠️ Lỗi / Đang sửa / Đã bỏ</div>'+other.map(igCard).join(''); }
   h+='<div class="sech">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="ig">'+(SHOW_PUB.ig?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_PUB.ig) h+= pub.length ? pub.slice(0,50).map(igCard).join('') : '<div class="empty">Chưa có.</div>';
@@ -667,14 +672,7 @@ function renderFB(){
   var h=intro+toolbar('fb', Object.keys(counts), counts);
   h+='<div class="sech">📋 Chưa lên lịch ('+active.length+')</div>';
   if(!active.length){ h+='<div class="empty">Không còn bài chờ lên lịch.</div>'; }
-  else {
-    var cur='';
-    active.forEach(function(p){
-      var d=dayLabel(p.scheduled_at);
-      if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; }
-      h+=fbCard(p);
-    });
-  }
+  else { h+=byDayCards(active, fbCard); }
   h+='<div class="sech">🗓 Đã lên lịch · chờ tới giờ ('+schedWait.length+')</div>';
   h+= schedWait.length ? schedWait.map(fbCard).join('') : '<div class="empty">Trống.</div>';
   h+='<div class="sech">✅ Đã lên lịch · đã qua giờ đăng ('+schedPast.length+')'+(schedPast.length?'<button class="pubtoggle" data-donesec="fb">'+(SHOW_DONE.fb?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
@@ -722,9 +720,10 @@ function renderAds(){
     + '<div class="adslink">'+link+'</div>'
     + toolbar('ads', Object.keys(counts), counts);
   if(!A.length){ host.innerHTML = h+'<div class="empty">Chưa có ads nào'+(FILTER.ads?' (đang lọc)':'')+'.</div>'; return; }
-  h+= active.length ? active.map(adCard).join('') : '<div class="empty">Không có ads chờ xử lý.</div>';
+  var adDay=function(a){ return a.created_at; }; // ads không có scheduled_at → nhóm theo NGÀY TẠO
+  h+= active.length ? byDayCards(active, adCard, adDay) : '<div class="empty">Không có ads chờ xử lý.</div>';
   h+='<div class="sech">✅ Đã bật / đã bỏ ('+done.length+')'+(done.length?'<button class="pubtoggle" data-donesec="ads">'+(SHOW_DONE.ads?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
-  if(SHOW_DONE.ads && done.length) h+= done.map(adCard).join('');
+  if(SHOW_DONE.ads && done.length) h+= byDayCards(done, adCard, adDay);
   host.innerHTML=h;
 }
 
