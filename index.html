@@ -79,6 +79,8 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .pimg{width:112px;border-radius:10px}
 .pimg[draggable=true]{cursor:grab}
 .pimg.drag{opacity:.45}
+.pimg.drag .pph{outline:2px solid var(--brown2);box-shadow:0 6px 18px rgba(122,92,46,.35)}
+.pimg.dragover .pph{outline:2px dashed var(--brown);outline-offset:2px}
 .pimg .pph{border:1px solid var(--line);border-radius:9px;overflow:hidden;line-height:0;cursor:zoom-in;position:relative}
 .pimg img{width:112px;height:140px;object-fit:cover;display:block}
 .ord{position:absolute;top:4px;left:4px;background:rgba(122,92,46,.92);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;font-variant-numeric:tabular-nums}
@@ -399,6 +401,7 @@ var SAVING = {};      // SAVING[id]=true khi đang lưu (khóa thao tác chồng
 var UNDO = {};        // UNDO[id]=mảng ảnh trước đó (hoàn tác)
 var ADD_TARGET = null;
 var DRAG = null;
+var SWALLOW_CLICK = false;   // true ngay sau khi kéo-thả cảm ứng → nuốt cú click kế (đừng mở lightbox)
 var SHOW_PUB = {ig:false, fb:false};       // ẩn bài ĐÃ ĐĂNG mặc định (đỡ tốn tài nguyên); bấm mới hiện
 var SHOW_DONE = {fb:false, ads:false};     // ẩn mục "đã xử lý" (FB: đã qua giờ · Ads: đã bật/bỏ) mặc định
 function togglePub(ch){ SHOW_PUB[ch] = !SHOW_PUB[ch]; if(ch==='ig') renderIG(); else renderFB(); }
@@ -516,7 +519,7 @@ function mediaEditor(p, key, ro){
   if(!ro){
     h += '<div class="reord">'
       + (saving ? '<span>💾 đang lưu…</span>'
-                : '<span>↕ Kéo (máy tính) · ◀▶ đổi thứ tự · 🗑 xóa · ＋ thêm — máy đăng đúng thứ tự này</span>')
+                : '<span>↕ Đổi vị trí: <b>chạm-giữ rồi kéo</b> (điện thoại) hoặc kéo bằng chuột (máy tính) · ◀▶ đổi thứ tự · 🗑 xóa · ＋ thêm — máy đăng đúng thứ tự này</span>')
       + ((UNDO[p.id] && !saving) ? ' <button class="reset" data-undo="'+p.id+'">↺ hoàn tác</button>' : '')
       + '</div>';
   }
@@ -809,6 +812,7 @@ function tab(name){
 /* ---- delegation dùng cho CẢ igBody & fbBody: sửa ảnh · copy · tải · lightbox · tick · kéo-thả ---- */
 function wireBody(host){
   host.addEventListener('click', function(e){
+    if(SWALLOW_CLICK){ SWALLOW_CLICK=false; e.preventDefault(); e.stopPropagation(); return; }
     var el;
     if((el=e.target.closest('[data-dl]'))){ dl(el.getAttribute('data-dl')); return; }
     if((el=e.target.closest('[data-mv]'))){ moveMedia(+el.getAttribute('data-pid'), +el.getAttribute('data-i'), el.getAttribute('data-mv')==='up'?-1:1); return; }
@@ -845,6 +849,47 @@ function wireBody(host){
     var p=post(pid); if(!p) return; var arr=(p.media||[]).slice();
     var mv=arr.splice(from,1)[0]; arr.splice(to,0,mv);
     applyMedia(pid, arr); });
+
+  /* KÉO–THẢ CẢM ỨNG (điện thoại): chạm-giữ 1 ảnh ~0,2s để "nhấc" → kéo sang ảnh khác → thả = đổi vị trí.
+     (draggable ở trên chỉ chạy chuột máy tính; iOS/Android cần tự xử touch.) */
+  var TDRAG=null;
+  function tEnd(commit){
+    if(!TDRAG) return;
+    clearTimeout(TDRAG.timer);
+    if(TDRAG.el) TDRAG.el.classList.remove('drag');
+    if(TDRAG.over) TDRAG.over.classList.remove('dragover');
+    if(TDRAG.active){ SWALLOW_CLICK=true; setTimeout(function(){ SWALLOW_CLICK=false; },350); }  // chặn lightbox mở sau khi kéo
+    var d=TDRAG; TDRAG=null;
+    if(commit && d.active && d.to!=null && d.to!==d.from){
+      var p=post(d.pid); if(!p) return; var arr=(p.media||[]).slice();
+      var mv=arr.splice(d.from,1)[0]; arr.splice(d.to,0,mv); applyMedia(d.pid, arr);
+    }
+  }
+  host.addEventListener('touchstart', function(e){
+    if(e.touches.length!==1) return;
+    var pim=e.target.closest('.pimg[draggable=true]'); if(!pim) return;
+    if(e.target.closest('button')) return;          // chạm nút ◀▶⬇🗑 thì đừng kéo
+    var t=e.touches[0];
+    TDRAG={pid:+pim.getAttribute('data-pid'), from:+pim.getAttribute('data-i'), el:pim, x:t.clientX, y:t.clientY, active:false, to:null, over:null};
+    TDRAG.timer=setTimeout(function(){ if(TDRAG){ TDRAG.active=true; pim.classList.add('drag'); if(navigator.vibrate) navigator.vibrate(15); } }, 220);
+  }, {passive:true});
+  host.addEventListener('touchmove', function(e){
+    if(!TDRAG) return;
+    var t=e.touches[0];
+    if(!TDRAG.active){                               // chưa "nhấc" mà đã trượt = cuộn trang → hủy kéo
+      if(Math.abs(t.clientX-TDRAG.x)>10 || Math.abs(t.clientY-TDRAG.y)>10){ clearTimeout(TDRAG.timer); TDRAG=null; }
+      return;
+    }
+    e.preventDefault();                              // đang kéo → chặn cuộn
+    var over=document.elementFromPoint(t.clientX, t.clientY);
+    var tp=over&&over.closest?over.closest('.pimg'):null;
+    if(TDRAG.over && TDRAG.over!==tp){ TDRAG.over.classList.remove('dragover'); TDRAG.over=null; }
+    if(tp && tp!==TDRAG.el && +tp.getAttribute('data-pid')===TDRAG.pid){
+      TDRAG.to=+tp.getAttribute('data-i'); TDRAG.over=tp; tp.classList.add('dragover');
+    } else { TDRAG.to=null; }
+  }, {passive:false});
+  host.addEventListener('touchend', function(){ tEnd(true); });
+  host.addEventListener('touchcancel', function(){ tEnd(false); });
 }
 
 /* DI TRÚ 1 LẦN: đẩy tick "đã lên lịch" FB cũ (localStorage máy NÀY) lên DB → union, KHÔNG xóa cái đã có.
