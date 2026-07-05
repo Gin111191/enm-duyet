@@ -108,8 +108,6 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .minfo{flex:1;min-width:0}
 .minfo>div{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 .msub{font-size:11.5px;color:var(--muted);margin-top:3px}
-.mexp{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--brown);border-radius:8px;width:34px;height:34px;font-size:15px;cursor:pointer}
-.mexp.mini-t{width:26px;height:26px;font-size:12px;margin-left:auto;opacity:.65}
 .latebadge{font-size:10.5px;font-weight:800;color:#a33;background:#fdeaea;border-radius:6px;padding:2px 7px;white-space:nowrap}
 /* preview WYSIWYG: hiển thị giống layout thật FB/IG để duyệt */
 .fv{margin:10px 0 4px}
@@ -182,6 +180,23 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 #lb .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:34px;color:#fff;opacity:.7;padding:18px;cursor:pointer;user-select:none}
 #lb .prev{left:0}#lb .next{right:0}
 #lb .dlbig{position:absolute;bottom:54px;left:50%;transform:translateX(-50%);background:#fff;color:var(--brown);border:0;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer}
+/* thẻ gọn click → mở popup */
+.card.mini.clk{cursor:pointer;transition:box-shadow .12s,border-color .12s}
+.card.mini.clk:hover{border-color:var(--brown2);box-shadow:0 2px 10px rgba(122,92,46,.12)}
+.card.mini.clk:active{transform:scale(.995)}
+.copen{flex:0 0 auto;color:var(--brown2);font-size:22px;font-weight:700;padding:0 2px 0 4px;opacity:.5}
+/* dropdown lọc trạng thái */
+.fsel{border:1px solid var(--line);background:#fff;color:var(--brown);border-radius:9px;padding:6px 26px 6px 10px;font-size:12.5px;font-weight:700;cursor:pointer;min-height:36px;max-width:64%;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%237a5c2e' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+/* popup chi tiết bài (modal) — click thẻ mở ra, đầy đủ chức năng */
+#detail{position:fixed;inset:0;background:rgba(25,18,12,.55);display:none;z-index:55;align-items:flex-start;justify-content:center;padding:22px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#detail.on{display:flex}
+.dpanel{background:var(--bg);border:1px solid var(--line);border-radius:16px;width:100%;max-width:440px;margin:auto;box-shadow:0 12px 48px rgba(0,0,0,.35);overflow:hidden}
+.dhead{position:sticky;top:0;display:flex;align-items:center;gap:8px;padding:11px 12px;background:#fffdf9;border-bottom:1px solid var(--line);z-index:1}
+.dttl{font-weight:800;color:var(--brown);font-size:14px;flex:1;font-family:'Iowan Old Style',Georgia,serif}
+.dx{flex:0 0 auto;border:1px solid var(--line);background:var(--warm);color:var(--brown);border-radius:9px;width:36px;height:36px;font-size:15px;font-weight:700;cursor:pointer}
+#detailBody{padding:12px}
+#detailBody .card{margin-bottom:0;border:none;box-shadow:none;padding:0}
+#detailBody .card.done{opacity:1}
 :focus-visible{outline:2px solid var(--brown);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 /* DESKTOP ≥900px: 3 cột cạnh nhau, ẩn tabs */
@@ -231,6 +246,13 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
   <div class="lbx">chạm nền để đóng · ‹ › chuyển ảnh</div>
 </div>
 
+<div id="detail" onclick="if(event.target===this)closeDetail()">
+  <div class="dpanel">
+    <div class="dhead"><span class="dttl" id="dtitle"></span><button class="dx" onclick="closeDetail()" aria-label="Đóng">✕</button></div>
+    <div id="detailBody"></div>
+  </div>
+</div>
+
 <script>
 var API = 'https://hxucribafqcxsybovgmc.supabase.co/functions/v1/autopub-review';
 var PIN = sessionStorage.getItem('enm_pin') || '';
@@ -274,6 +296,18 @@ function chip(status){ var s=STC[status]||{c:'gray',t:status}; return '<span cla
 /* nhãn theo KÊNH: bài FB status 'rejected' = "park" để máy KHÔNG tự đăng (Gin đăng tay) → hiện "chưa lên lịch", KHÔNG phải "đã bỏ". IG vẫn "đã bỏ". */
 function statusLabel(ch,status){ if(ch==='fb'&&status==='rejected') return {c:'amber',t:'📋 chưa lên lịch'}; return STC[status]||{c:'gray',t:status}; }
 function chip2(ch,status){ var s=statusLabel(ch,status); return '<span class="sc sc-'+s.c+'">'+esc(s.t)+'</span>'; }
+/* FB: trạng thái suy TỪ owner_scheduled + giờ hẹn + published (KHÔNG dùng cột status thô = luôn 'rejected'/'park').
+   Sửa bug: bài đã tick "đã lên lịch" trước đây vẫn hiện "chưa lên lịch"/"trễ" vì thẻ đọc status. */
+function fbState(p){ if(p.status==='published') return 'published'; if(fbDone(p)) return isLate(p)?'sched_past':'sched_wait'; return 'unscheduled'; }
+var FBSTATE = {
+  unscheduled:{c:'amber', t:'📋 chưa lên lịch'},
+  sched_wait: {c:'teal',  t:'🗓 đã lên lịch'},
+  sched_past: {c:'green', t:'✅ đã lên lịch · qua giờ'},
+  published:  {c:'blue',  t:'📤 đã đăng'}
+};
+/* nhãn + cờ "trễ" cho THẺ GỌN: FB theo fbState; IG/Ads theo status thật */
+function cardChip(p){ if(p.channel==='fb'){ var s=FBSTATE[fbState(p)]; return '<span class="sc sc-'+s.c+'">'+esc(s.t)+'</span>'; } return chip(p.status); }
+function cardLate(p){ return p.channel==='fb' ? (fbState(p)==='unscheduled' && isLate(p)) : (isLate(p) && p.status!=='published'); }
 /* render danh sách, chèn tiêu đề NGÀY (highlight) mỗi khi đổi ngày — dùng chung IG/FB/Ads. dateOf: hàm lấy mốc ngày (mặc định scheduled_at; ads truyền created_at) */
 function byDayCards(list, cardFn, dateOf){ var h='', cur=''; list.forEach(function(p){ var d=dayLabel(dateOf?dateOf(p):p.scheduled_at); if(d!==cur){ cur=d; h+='<div class="dayhdr">📅 '+esc(d)+'</div>'; } h+=cardFn(p); }); return h; }
 function post(id){ id=+id; for(var i=0;i<DATA.posts.length;i++) if(DATA.posts[i].id===id) return DATA.posts[i]; return null; }
@@ -306,6 +340,19 @@ function openLB(key, idx){ LBLIST=LBSETS[key]||[]; LBIDX=idx;
 function closeLB(){ document.getElementById('lb').classList.remove('on'); document.getElementById('lbimg').src=''; }
 function stepLB(d){ if(!LBLIST.length) return; LBIDX=(LBIDX+d+LBLIST.length)%LBLIST.length; document.getElementById('lbimg').src=LBLIST[LBIDX]; }
 function dlLB(){ if(LBLIST[LBIDX]) dl(LBLIST[LBIDX]); }
+
+/* ---- popup chi tiết bài (modal) — thẻ gọn click mở ra, đủ chức năng ---- */
+var DETAIL=null;   // {ch,id} bài đang mở, null = đóng
+function adById(id){ id=+id; for(var i=0;i<DATA.ads.length;i++) if(DATA.ads[i].id===id) return DATA.ads[i]; return null; }
+function openDetail(ch,id){ DETAIL={ch:ch,id:+id}; renderDetail(); document.getElementById('detail').classList.add('on'); document.body.style.overflow='hidden'; }
+function closeDetail(){ DETAIL=null; document.getElementById('detail').classList.remove('on'); document.getElementById('detailBody').innerHTML=''; document.body.style.overflow=''; }
+function renderDetail(){
+  if(!DETAIL) return;
+  var body=document.getElementById('detailBody'), html='', t='';
+  if(DETAIL.ch==='ads'){ var a=adById(DETAIL.id); if(!a){ closeDetail(); return; } html=adDetail(a); t=a.name||('#'+a.id); }
+  else { var p=post(DETAIL.id); if(!p){ closeDetail(); return; } html=(p.channel==='ig'?igDetail(p):fbDetail(p)); t=p.batch||('#'+p.id); }
+  document.getElementById('dtitle').textContent=t; body.innerHTML=html; measureCollages();
+}
 
 /* ---- gate / decide ---- */
 function enter(){ PIN=document.getElementById('pin').value.trim(); refresh(); }
@@ -357,39 +404,33 @@ var SHOW_DONE = {fb:false, ads:false};     // ẩn mục "đã xử lý" (FB: đ
 function togglePub(ch){ SHOW_PUB[ch] = !SHOW_PUB[ch]; if(ch==='ig') renderIG(); else renderFB(); }
 function toggleDone(k){ SHOW_DONE[k] = !SHOW_DONE[k]; if(k==='fb') renderFB(); else renderAds(); }
 
-/* ---- bộ lọc trạng thái + sắp xếp giờ đăng + chế độ xem (đầy đủ/gọn) ---- */
-var FILTER = {ig:'', fb:'', ads:''};                 // ''=tất cả, hoặc 1 status
+/* ---- bộ lọc trạng thái (dropdown) + sắp xếp giờ đăng ---- */
+var FILTER = {ig:'', fb:'', ads:''};                 // ''=tất cả, hoặc 1 giá trị lọc
 var SORT   = {ig:'asc', fb:'asc', ads:'asc'};        // theo giờ đăng (ads: theo id)
-var VIEWC  = {ig:'full', fb:'full', ads:'full'};     // chế độ xem cả cột
-var VIEWP  = {};                                     // override từng bài: VIEWP[id]='mini'|'full'
 function reRenderCol(ch){ if(ch==='ig') renderIG(); else if(ch==='fb') renderFB(); else renderAds(); }
-function setFilter(ch,s){ FILTER[ch]=(FILTER[ch]===s?'':s); reRenderCol(ch); }
 function toggleSort(ch){ SORT[ch]=(SORT[ch]==='asc'?'desc':'asc'); reRenderCol(ch); }
-function toggleViewCol(ch){ VIEWC[ch]=(VIEWC[ch]==='full'?'mini':'full'); VIEWP={}; reRenderCol(ch); }
-function toggleViewPost(ch,id){ var k=ch+':'+id, cur=VIEWP[k]||VIEWC[ch]; VIEWP[k]=(cur==='full'?'mini':'full'); reRenderCol(ch); }
-function viewOf(ch,id){ return VIEWP[ch+':'+id]||VIEWC[ch]; }
 function cmpTime(a,b){ var d=(Date.parse(a.scheduled_at||0)||0)-(Date.parse(b.scheduled_at||0)||0); return SORT[a.channel==='ig'?'ig':'fb']==='asc'?d:-d; }
 function serverNow(){ return Date.parse(DATA.now||'')||Date.now(); }
 function isLate(p){ return p.scheduled_at && Date.parse(p.scheduled_at) < serverNow(); }
-function toolbar(ch, statuses, counts){
-  var h='<div class="tools">';
-  statuses.forEach(function(s){
-    var st=statusLabel(ch,s); var on=FILTER[ch]===s;
-    h+='<button class="fchip'+(on?' on':'')+'" data-filter="'+ch+'" data-st="'+s+'">'+esc(st.t)+(counts[s]?' · '+counts[s]:'')+'</button>';
+/* toolbar: dropdown lọc (opts=[{v,label,count}]) + nút đảo chiều sắp xếp */
+function toolbar(ch, opts, total){
+  var h='<div class="tools"><select class="fsel" data-filter="'+ch+'">'
+    + '<option value=""'+(FILTER[ch]===''?' selected':'')+'>Tất cả'+(total?' ('+total+')':'')+'</option>';
+  opts.forEach(function(o){
+    h+='<option value="'+esc(o.v)+'"'+(FILTER[ch]===o.v?' selected':'')+'>'+esc(o.label)+(o.count?' ('+o.count+')':'')+'</option>';
   });
-  h+='<span class="tspace"></span>'
-    +'<button class="tbtn" data-sort="'+ch+'">⇅ '+(SORT[ch]==='asc'?'sớm→muộn':'muộn→sớm')+'</button>'
-    +'<button class="tbtn" data-viewcol="'+ch+'">'+(VIEWC[ch]==='full'?'▤ Thu gọn':'🗂 Đầy đủ')+'</button>';
+  h+='</select><span class="tspace"></span>'
+    +'<button class="tbtn" data-sort="'+ch+'">⇅ '+(SORT[ch]==='asc'?'sớm→muộn':'muộn→sớm')+'</button>';
   return h+'</div>';
 }
 /* thẻ ngang rút gọn — dùng chung IG/FB */
 function miniCard(p){
   var media=p.media||[]; var u0=media.length?(media[0].thumb_url||media[0].url):'';
-  return '<div class="card mini">'
+  return '<div class="card mini clk" data-open="'+p.channel+':'+p.id+'">'
     +(u0?'<div class="mthumb" style="background-image:url(\''+esc(u0)+'\')"></div>':'<div class="mthumb"></div>')
-    +'<div class="minfo"><div><span class="bcode">'+esc(p.batch||('#'+p.id))+'</span> '+chip2(p.channel,p.status)+(isLate(p)&&p.status!=='published'?' <span class="latebadge">⚠️ trễ</span>':'')+'</div>'
+    +'<div class="minfo"><div><span class="bcode">'+esc(p.batch||('#'+p.id))+'</span> '+cardChip(p)+(cardLate(p)?' <span class="latebadge">⚠️ trễ</span>':'')+'</div>'
     +'<div class="msub">'+esc(timeHM(p.scheduled_at))+' · '+media.length+' ảnh · '+(p.format==='story'?'story':'bài ảnh')+'</div></div>'
-    +'<button class="mexp" data-viewpost="'+p.channel+'" data-pid="'+p.id+'" title="Mở đầy đủ">⤢</button></div>';
+    +'<span class="copen">›</span></div>';
 }
 
 function canEditMedia(p){ return EDITABLE_UI.indexOf(p.status)>=0 && IMG_FMT.indexOf(p.format)>=0; }
@@ -578,16 +619,15 @@ function prepImage(file){
 }
 
 /* ============ AUTO IG ============ */
-function igCard(p){
-  if(viewOf('ig',p.id)==='mini') return miniCard(p);
+function igCard(p){ return miniCard(p); }                 // cột = thẻ gọn
+function igDetail(p){                                       // popup = đầy đủ
   var h='<div class="card"><div class="meta">'
     + '<span class="chchip ig">IG</span>'
     + (p.batch?'<span class="bcode">'+esc(p.batch)+'</span>':'')
     + '<span class="fmt">'+esc(FMT[p.format]||p.format)+'</span>'
     + '<span class="tm">'+esc(fmtTime(p.scheduled_at))+'</span>'
     + chip(p.status)
-    + '<span class="id">#'+p.id+'</span>'
-    + '<button class="mexp mini-t" data-viewpost="ig" data-pid="'+p.id+'" title="Thu gọn">▤</button></div>'
+    + '<span class="id">#'+p.id+'</span></div>'
     + feedPreview(p)
     + (canEditMedia(p) ? mediaEditor(p,'ig'+p.id,false) : thumbStrip(p.media,'ig'+p.id))
     + '<div class="cap">'+esc(p.caption)+'</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
@@ -607,7 +647,8 @@ function renderIG(){
   var upcoming=ig.filter(function(p){ return ['approved','publishing'].indexOf(p.status)>=0; }).sort(srt);
   var pub=ig.filter(function(p){ return p.status==='published'; }).sort(byTime).reverse();
   var other=ig.filter(function(p){ return ['failed','rejected','needs_edit'].indexOf(p.status)>=0; }).sort(srt);
-  var h=toolbar('ig', Object.keys(counts), counts);
+  var igOpts=Object.keys(counts).map(function(s){ return {v:s, label:(STC[s]||{t:s}).t, count:counts[s]}; });
+  var h=toolbar('ig', igOpts, igAll.length);
   h+='<div class="sech">⏳ Chờ Gin duyệt</div>';
   if(pending.length>=2) h+='<button id="btnAll" onclick="approveAll()">✅ Duyệt tất cả mục chờ</button>';
   h+= pending.length ? byDayCards(pending, igCard) : '<div class="empty">Không có bài IG chờ duyệt.</div>';
@@ -616,12 +657,12 @@ function renderIG(){
   if(other.length){ h+='<div class="sech">⚠️ Lỗi / Đang sửa / Đã bỏ</div>'+other.map(igCard).join(''); }
   h+='<div class="sech">📤 Đã đăng ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="ig">'+(SHOW_PUB.ig?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_PUB.ig) h+= pub.length ? pub.slice(0,50).map(igCard).join('') : '<div class="empty">Chưa có.</div>';
-  host.innerHTML=h; measureCollages();
+  host.innerHTML=h; measureCollages(); if(DETAIL) renderDetail();
 }
 
 /* ============ PLANNER FB ============ */
-function fbCard(p){
-  if(viewOf('fb',p.id)==='mini') return miniCard(p);
+function fbCard(p){ return miniCard(p); }                  // cột = thẻ gọn
+function fbDetail(p){                                       // popup = đầy đủ
   var isStory=p.format==='story';
   var media=p.media||[];
   var done=fbDone(p);
@@ -631,8 +672,7 @@ function fbCard(p){
     + '<span class="badge '+(isStory?'b-story':'b-post')+'">'+(isStory?'Tin (story)':'Bài ảnh')+'</span>'
     + '<span class="ftitle">'+esc(p.batch||('#'+p.id))+'</span>'
     + (!done&&isLate(p)?'<span class="latebadge">⚠️ trễ</span>':'')
-    + '<label class="chk"><input type="checkbox" data-done="'+p.id+'"'+(done?' checked':'')+'>đã lên lịch</label>'
-    + '<button class="mexp mini-t" data-viewpost="fb" data-pid="'+p.id+'" title="Thu gọn">▤</button></div>';
+    + '<label class="chk"><input type="checkbox" data-done="'+p.id+'"'+(done?' checked':'')+'>đã lên lịch</label></div>';
   if(isStory){
     h+='<div class="note"><b>Chỉ đăng ẢNH — không caption.</b> Story bản có chữ (Thương hiệu render). Tải ảnh rồi đăng Tin trên Facebook.</div>';
   } else {
@@ -659,8 +699,8 @@ function fbCard(p){
 function renderFB(){
   var host=document.getElementById('fbBody');
   var all=DATA.posts.filter(function(p){ return p.channel==='fb'; });
-  var counts={}; all.forEach(function(p){ counts[p.status]=(counts[p.status]||0)+1; });
-  var flt=FILTER.fb ? all.filter(function(p){ return p.status===FILTER.fb; }) : all;
+  var fbCounts={}; all.forEach(function(p){ var s=fbState(p); fbCounts[s]=(fbCounts[s]||0)+1; });
+  var flt=FILTER.fb ? all.filter(function(p){ return fbState(p)===FILTER.fb; }) : all;
   var srt=function(a,b){ var d=byTime(a,b); return SORT.fb==='asc'?d:-d; };
   var np=flt.filter(function(p){ return p.status!=='published'; });
   // 3 nhóm theo vòng đời (Gin chốt 4/7): ①chưa lên lịch (kèm ⚠️ trễ nếu quá giờ) → ②đã lên lịch chưa tới giờ → ③đã lên lịch + QUA giờ (ẩn)
@@ -670,7 +710,9 @@ function renderFB(){
   var pub=flt.filter(function(p){ return p.status==='published'; }).sort(byTime).reverse();
   var intro='<div class="fbintro">Facebook máy chưa đăng (app chưa Live) → <b>Gin đăng tay</b> trên Business Suite Planner. '
     + 'Copy caption · tải ảnh · sắp/thêm/xóa ảnh · tick "đã lên lịch" (lưu trên máy này).</div>';
-  var h=intro+toolbar('fb', Object.keys(counts), counts);
+  var fbOrder=['unscheduled','sched_wait','sched_past','published'];
+  var fbOpts=fbOrder.filter(function(s){ return fbCounts[s]; }).map(function(s){ return {v:s, label:FBSTATE[s].t, count:fbCounts[s]}; });
+  var h=intro+toolbar('fb', fbOpts, all.length);
   h+='<div class="sech">📋 Chưa lên lịch ('+active.length+')</div>';
   if(!active.length){ h+='<div class="empty">Không còn bài chờ lên lịch.</div>'; }
   else { h+=byDayCards(active, fbCard); }
@@ -680,23 +722,22 @@ function renderFB(){
   if(SHOW_DONE.fb && schedPast.length) h+= schedPast.map(fbCard).join('');
   h+='<div class="sech">📤 Đã đăng qua máy ('+pub.length+')'+(pub.length?'<button class="pubtoggle" data-pub="fb">'+(SHOW_PUB.fb?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_PUB.fb && pub.length) h+= pub.slice(0,50).map(fbCard).join('');
-  host.innerHTML=h; measureCollages();
+  host.innerHTML=h; measureCollages(); if(DETAIL) renderDetail();
 }
 
 /* ============ ADS ============ */
-function adCard(a){
+function adCard(a){                                         // cột = thẻ gọn
   var cr0=a.creative||{};
-  if(viewOf('ads',a.id)==='mini'){
-    return '<div class="card mini">'
-      +(cr0.image_url?'<div class="mthumb" style="background-image:url(\''+esc(cr0.image_url)+'\')"></div>':'<div class="mthumb"></div>')
-      +'<div class="minfo"><div><span class="bcode">'+esc(a.name||('#'+a.id))+'</span> '+chip(a.status)+'</div>'
-      +'<div class="msub">'+money(a.budget_vnd)+'/ngày · '+esc(a.objective||'')+'</div></div>'
-      +'<button class="mexp" data-viewpost="ads" data-pid="'+a.id+'" title="Mở đầy đủ">⤢</button></div>';
-  }
+  return '<div class="card mini clk" data-open="ads:'+a.id+'">'
+    +(cr0.image_url?'<div class="mthumb" style="background-image:url(\''+esc(cr0.image_url)+'\')"></div>':'<div class="mthumb"></div>')
+    +'<div class="minfo"><div><span class="bcode">'+esc(a.name||('#'+a.id))+'</span> '+chip(a.status)+'</div>'
+    +'<div class="msub">'+money(a.budget_vnd)+'/ngày · '+esc(a.objective||'')+'</div></div>'
+    +'<span class="copen">›</span></div>';
+}
+function adDetail(a){                                       // popup = đầy đủ
   var cr=a.creative||{};
   var h='<div class="card"><div class="meta"><span class="chchip ads">ADS</span>'
-    + '<span class="bcode">'+esc(a.name||('#'+a.id))+'</span>'+chip(a.status)+'<span class="id">#'+a.id+'</span>'
-    + '<button class="mexp mini-t" data-viewpost="ads" data-pid="'+a.id+'" title="Thu gọn">▤</button></div>';
+    + '<span class="bcode">'+esc(a.name||('#'+a.id))+'</span>'+chip(a.status)+'<span class="id">#'+a.id+'</span></div>';
   if(cr.image_url) h+=thumbStrip([{url:cr.image_url}],'ad'+a.id);
   h+='<div class="cap">Mục tiêu: '+esc(a.objective||'—')+'\nĐối tượng: '+esc(a.audience||'—')
     + '\nNgân sách: '+money(a.budget_vnd)+'/ngày\nLịch: '+esc(a.schedule_note||'—')
@@ -709,6 +750,7 @@ function renderAds(){
   var host=document.getElementById('adsBody');
   var A0=DATA.ads.slice().sort(function(a,b){ return SORT.ads==='asc'? a.id-b.id : b.id-a.id; });
   var counts={}; A0.forEach(function(a){ counts[a.status]=(counts[a.status]||0)+1; });
+  var adsOpts=Object.keys(counts).map(function(s){ return {v:s, label:(STC[s]||{t:s}).t, count:counts[s]}; });
   var A=FILTER.ads ? A0.filter(function(a){ return a.status===FILTER.ads; }) : A0;
   var isDone=function(a){ return ['activated_by_owner','rejected'].indexOf(a.status)>=0; };
   var active=A.filter(function(a){ return !isDone(a); });
@@ -719,13 +761,13 @@ function renderAds(){
   var h='<div class="adsnote">💰 Duyệt trên trang = máy chỉ <b>DỰNG NHÁP TẮT</b> trong Ads Manager. '
     + 'Bật chạy = Gin bấm tay rồi bấm "▶️ Tôi đã bật tay". <b>Máy KHÔNG bao giờ tự tiêu tiền.</b></div>'
     + '<div class="adslink">'+link+'</div>'
-    + toolbar('ads', Object.keys(counts), counts);
+    + toolbar('ads', adsOpts, A0.length);
   if(!A.length){ host.innerHTML = h+'<div class="empty">Chưa có ads nào'+(FILTER.ads?' (đang lọc)':'')+'.</div>'; return; }
   var adDay=function(a){ return a.created_at; }; // ads không có scheduled_at → nhóm theo NGÀY TẠO
   h+= active.length ? byDayCards(active, adCard, adDay) : '<div class="empty">Không có ads chờ xử lý.</div>';
   h+='<div class="sech">✅ Đã bật / đã bỏ ('+done.length+')'+(done.length?'<button class="pubtoggle" data-donesec="ads">'+(SHOW_DONE.ads?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_DONE.ads && done.length) h+= byDayCards(done, adCard, adDay);
-  host.innerHTML=h;
+  host.innerHTML=h; if(DETAIL) renderDetail();
 }
 
 /* ============ summary + tabs ============ */
@@ -775,15 +817,15 @@ function wireBody(host){
     if((el=e.target.closest('[data-undo]'))){ doUndo(+el.getAttribute('data-undo')); return; }
     if((el=e.target.closest('[data-pub]'))){ togglePub(el.getAttribute('data-pub')); return; }
     if((el=e.target.closest('[data-donesec]'))){ toggleDone(el.getAttribute('data-donesec')); return; }
-    if((el=e.target.closest('[data-filter]'))){ setFilter(el.getAttribute('data-filter'), el.getAttribute('data-st')); return; }
     if((el=e.target.closest('[data-sort]'))){ toggleSort(el.getAttribute('data-sort')); return; }
-    if((el=e.target.closest('[data-viewcol]'))){ toggleViewCol(el.getAttribute('data-viewcol')); return; }
-    if((el=e.target.closest('[data-viewpost]'))){ toggleViewPost(el.getAttribute('data-viewpost'), +el.getAttribute('data-pid')); return; }
+    if((el=e.target.closest('[data-open]'))){ var op=el.getAttribute('data-open').split(':'); openDetail(op[0], +op[1]); return; }
     if((el=e.target.closest('[data-copy]'))){ var p=post(el.getAttribute('data-pid')); if(!p) return;
       copyText(el.getAttribute('data-copy')==='cap' ? (p.caption||'') : (p.first_comment_text||''), el); return; }
     if((el=e.target.closest('[data-lb]'))){ openLB(el.getAttribute('data-lb'), +el.getAttribute('data-lbi')); return; }
   });
   host.addEventListener('change', function(e){
+    var sel=e.target.closest('select[data-filter]');
+    if(sel){ var fch=sel.getAttribute('data-filter'); FILTER[fch]=sel.value; reRenderCol(fch); return; }
     var cb=e.target.closest('[data-done]'); if(!cb) return;
     var id=+cb.getAttribute('data-done'); var val=cb.checked; var p=post(id);
     if(p) p.owner_scheduled=val;                          // đổi tức thì (optimistic)
@@ -839,6 +881,10 @@ document.getElementById('pin').addEventListener('keydown', function(e){ if(e.key
 wireBody(document.getElementById('igBody'));
 wireBody(document.getElementById('fbBody'));
 wireBody(document.getElementById('adsBody'));   // để nút ẩn/hiện (data-donesec) + lightbox ảnh Ads hoạt động
+wireBody(document.getElementById('detailBody')); // popup: mọi tương tác (sửa ảnh/copy/tick/duyệt/lightbox) chạy trong modal
+document.addEventListener('keydown', function(e){ if(e.key!=='Escape') return;
+  if(document.getElementById('lb').classList.contains('on')) closeLB();
+  else if(DETAIL) closeDetail(); });
 if(PIN) refresh();
 setInterval(function(){
   if(document.getElementById('app').hidden) return;
