@@ -188,8 +188,8 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .card.mini.clk:active{transform:scale(.995)}
 .copen{flex:0 0 auto;color:var(--brown2);font-size:22px;font-weight:700;padding:0 2px 0 4px;opacity:.5}
 .qacts{flex:0 0 auto}
-.qacts .btns{margin-top:0;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:180px}
-.qacts .btns button{flex:0 0 auto;min-width:0;padding:5px 10px;min-height:32px;font-size:12px;border-radius:8px}
+.qacts .btns{margin-top:0;flex-wrap:nowrap;justify-content:flex-end;gap:5px}
+.qacts .btns button{flex:0 0 auto;min-width:0;padding:5px 9px;min-height:30px;font-size:11.5px;border-radius:7px;white-space:nowrap}
 /* dropdown lọc trạng thái */
 .fsel{border:1px solid var(--line);background:#fff;color:var(--brown);border-radius:9px;padding:6px 26px 6px 10px;font-size:12.5px;font-weight:700;cursor:pointer;min-height:36px;max-width:64%;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%237a5c2e' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
 /* popup chi tiết bài (modal) — click thẻ mở ra, đầy đủ chức năng */
@@ -384,24 +384,24 @@ function actRow(p){
   if(p.channel==='fb'){
     if(p.status==='published') return '';
     inner='<div class="btns">'+(fbDone(p)
-      ? '<button class="back" onclick="setSched('+p.id+',false)">↩︎ Bỏ lịch</button>'
-      : '<button class="ok" onclick="setSched('+p.id+',true)">🗓 Đã lên lịch</button>')+'</div>';
+      ? '<button class="back" onclick="setSched('+p.id+',false)">Bỏ lịch</button>'
+      : '<button class="ok" onclick="setSched('+p.id+',true)">Lên lịch</button>')+'</div>';
   } else {
-    inner=btnsHtml('post', p);   // '' nếu published/publishing
+    inner=btnsHtml('post', p, true);   // nhãn NGẮN cho thẻ gọn (popup vẫn nhãn đầy đủ)
   }
   return inner ? '<div class="qacts" onclick="event.stopPropagation()">'+inner+'</div>' : '';
 }
 
 /* nút hành động cho IG / Ads (giữ đúng luồng trạng thái trang cũ) */
-function btnsHtml(kind, p){ var s=p.status, h='<div class="btns">';
-  function bt(cls,dec,txt){ return '<button class="'+cls+'" onclick="decide(\''+kind+'\','+p.id+',\''+dec+'\')">'+txt+'</button>'; }
-  if(s==='pending') h+=bt('ok','approved','✅ Duyệt')+bt('ed','needs_edit','✏️ Sửa')+bt('no','rejected','❌ Bỏ');
-  else if(s==='needs_edit') h+=bt('ok','approved','✅ Duyệt luôn')+bt('no','rejected','❌ Bỏ');
-  else if(s==='approved') h+=bt('back','pending','↩︎ Rút duyệt')+bt('ed','needs_edit','✏️ Sửa')+bt('no','rejected','❌ Bỏ');
-  else if(s==='fb_scheduled') h+=bt('no','rejected','❌ Hủy đăng (gỡ khỏi lịch)');
-  else if(s==='failed') h+=bt('ok','approved','🔁 Thử lại')+bt('no','rejected','❌ Bỏ');
-  else if(s==='rejected') h+=bt('back','pending','↩︎ Khôi phục về chờ duyệt');
-  else if(s==='created_paused' && kind==='ad') h+=bt('ok','activated_by_owner','▶️ Tôi đã bật tay')+bt('no','rejected','❌ Bỏ');
+function btnsHtml(kind, p, compact){ var s=p.status, h='<div class="btns">';
+  function bt(cls,dec,full,short){ return '<button class="'+cls+'" onclick="decide(\''+kind+'\','+p.id+',\''+dec+'\')">'+(compact?short:full)+'</button>'; }
+  if(s==='pending') h+=bt('ok','approved','✅ Duyệt','Duyệt')+bt('ed','needs_edit','✏️ Sửa','Sửa')+bt('no','rejected','❌ Bỏ','Bỏ');
+  else if(s==='needs_edit') h+=bt('ok','approved','✅ Duyệt luôn','Duyệt')+bt('no','rejected','❌ Bỏ','Bỏ');
+  else if(s==='approved') h+=bt('back','pending','↩︎ Rút duyệt','Rút')+bt('ed','needs_edit','✏️ Sửa','Sửa')+bt('no','rejected','❌ Bỏ','Bỏ');
+  else if(s==='fb_scheduled') h+=bt('no','rejected','❌ Hủy đăng (gỡ khỏi lịch)','Hủy');
+  else if(s==='failed') h+=bt('ok','approved','🔁 Thử lại','Thử lại')+bt('no','rejected','❌ Bỏ','Bỏ');
+  else if(s==='rejected') h+=bt('back','pending','↩︎ Khôi phục về chờ duyệt','Khôi phục');
+  else if(s==='created_paused' && kind==='ad') h+=bt('ok','activated_by_owner','▶️ Tôi đã bật tay','Đã bật')+bt('no','rejected','❌ Bỏ','Bỏ');
   h+='</div>'; return (s==='publishing'||s==='published'||s==='activated_by_owner') ? '' : h; }
 
 /* thumbnails (IG / Ads): chạm → lightbox, video → mở link */
@@ -755,7 +755,7 @@ function renderFB(){
 /* ============ ADS ============ */
 function adCard(a){                                         // cột = thẻ gọn
   var cr0=a.creative||{};
-  var b=btnsHtml('ad', a);                                  // Duyệt/Sửa/Bỏ (hoặc ▶️ đã bật) theo trạng thái
+  var b=btnsHtml('ad', a, true);                            // nhãn ngắn Duyệt/Sửa/Bỏ (hoặc Đã bật) theo trạng thái
   return '<div class="card mini clk" data-open="ads:'+a.id+'">'
     +(cr0.image_url?'<div class="mthumb" style="background-image:url(\''+esc(cr0.image_url)+'\')"></div>':'<div class="mthumb"></div>')
     +'<div class="minfo"><div><span class="bcode">'+esc(a.name||('#'+a.id))+'</span> '+chip(a.status)+'</div>'
