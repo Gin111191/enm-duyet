@@ -1,4 +1,4 @@
-<!doctype html><!-- build: dong-bo-yeucau-sua-4muc 2026-07-05 -->
+<!doctype html><!-- build: yeucau-xoa-bucket-fbquagio 2026-07-06 -->
 <html lang="vi"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Êm Như Mây · Bảng điều khiển đăng bài</title>
@@ -129,6 +129,7 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .reqbtns{display:flex;gap:7px;margin-top:6px}
 .reqbtns button{border:none;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;min-height:0}
 .mini-edit{border:none;background:#f2e7d6;color:#7a5c2e;border-radius:7px;padding:5px 10px;font-size:11.5px;font-weight:700;cursor:pointer;margin-top:5px}
+.mini-del{border:none;background:#f7dedb;color:#a3352b;border-radius:7px;padding:5px 10px;font-size:11.5px;font-weight:700;cursor:pointer;margin-top:5px;margin-left:6px}
 .reqadd{width:100%;border:1px dashed #c9a24b;background:#fffaf3;color:#8a6a1e;border-radius:9px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer}
 /* preview WYSIWYG: hiển thị giống layout thật FB/IG để duyệt */
 .fv{margin:10px 0 4px}
@@ -349,11 +350,15 @@ function editBadge(o){ var s=editState(o);
 /* 4 MỤC CHUNG (Gin chốt thứ tự) — dùng cho CẢ IG lẫn FB */
 function postBucket(p){
   if(p.status==='published') return 4;
-  if(editState(p)==='open') return 3;                       // đang có yêu cầu sửa → "Đang sửa"
-  if(p.channel==='fb') return p.owner_discarded ? 3 : (fbDone(p) ? 2 : 1);
-  if(['failed','rejected','needs_edit'].indexOf(p.status)>=0) return 3;
+  if(editState(p)==='open') return 3;                       // CÒN yêu cầu sửa mở → "Đang sửa"
+  if(p.channel==='fb'){
+    if(p.owner_discarded) return 3;                         // đã bỏ
+    if(fbDone(p)) return isLate(p) ? 4 : 2;                 // đã lên lịch: QUA GIỜ → "Đã đăng" (Gin đăng tay) · chưa tới giờ → "Sắp lên"
+    return 1;                                               // chưa lên lịch
+  }
+  if(['failed','rejected'].indexOf(p.status)>=0) return 3;  // lỗi/đã bỏ (needs_edit ĐÃ xử lý xong rơi xuống mục 1 chờ Duyệt lại)
   if(['approved','publishing'].indexOf(p.status)>=0) return 2;
-  return 1;                                                 // pending (+ mặc định)
+  return 1;                                                 // pending · needs_edit-đã-xử-lý (badge "Đã xử lý", chờ Gin Duyệt)
 }
 function bucketLabel(n){ return ['','⏳ Chờ duyệt · lên lịch','🕒 Sắp lên · đã duyệt','⚠️ Lỗi · Đang sửa · Đã bỏ','📤 Đã đăng'][n]; }
 /* render danh sách, chèn tiêu đề NGÀY (highlight) mỗi khi đổi ngày — dùng chung IG/FB/Ads. dateOf: hàm lấy mốc ngày (mặc định scheduled_at; ads truyền created_at) */
@@ -428,6 +433,14 @@ function focusReq(){ var t=document.getElementById('reqta'); if(t){ t.focus(); t
 function reqOpenAdd(kind,id){ REQEDIT=kind+':'+id+':add'; renderDetail(); focusReq(); }
 function reqOpenEdit(kind,id,i){ REQEDIT=kind+':'+id+':'+i; renderDetail(); focusReq(); }
 function reqCancel(){ REQEDIT=null; renderDetail(); }
+function reqDelete(kind,id,i){    // xoá 1 yêu cầu CHƯA xử lý
+  if(!confirm('Xoá yêu cầu sửa này?')) return;
+  var o=objFor(kind,id); if(!o) return;
+  var L=editLog(o); if(!L[i]||L[i].done) return;
+  var prev=o.edit_log; L=L.slice(); L.splice(i,1); o.edit_log=L; REQEDIT=null; reRenderAll(kind);
+  api({action:'edit_request', kind:kind, id:id, op:'delete', index:i}).then(function(j){
+    if(j.error){ o.edit_log=prev; reRenderAll(kind); alert('Lỗi xoá yêu cầu: '+(j.error||'')); }
+  }); }
 /* nút "Sửa" trên thẻ/hành động → mở popup bài + form thêm yêu cầu (không còn prompt tách rời) */
 function suaCard(kind,id){ var ch = kind==='ad' ? 'ads' : ((post(id)||{}).channel||'ig'); openDetail(ch,id); reqOpenAdd(kind,id); }
 function reqSave(kind,id,i){        // i<0 = thêm mới; i>=0 = sửa lại entry (chỉ khi chưa done)
@@ -457,7 +470,7 @@ function editReqBlock(kind, o){
       h+='<div class="reqitem '+(e.done?'done':'open')+'"><div class="reqtxt">'+(e.done?'✅':'🔴')+' '+esc(e.text)+'</div>'
         +'<div class="reqmeta">'+esc(fmtTime(e.at))+(e.done&&e.done_at?(' · đã xử lý '+esc(fmtTime(e.done_at))):'')+'</div>'
         +(e.done&&e.resolution?('<div class="reqres">↳ '+esc(e.resolution)+'</div>'):'')
-        +(!e.done?('<div class="reqbtns"><button class="mini-edit" onclick="reqOpenEdit(\''+kind+'\','+o.id+','+i+')">✏️ Sửa lại yêu cầu</button></div>'):'')
+        +(!e.done?('<div class="reqbtns"><button class="mini-edit" onclick="reqOpenEdit(\''+kind+'\','+o.id+','+i+')">✏️ Sửa lại</button><button class="mini-del" onclick="reqDelete(\''+kind+'\','+o.id+','+i+')">🗑 Xoá</button></div>'):'')
         +'</div>';
     }
   });
