@@ -105,7 +105,7 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .fchip.on{background:var(--brown);border-color:var(--brown);color:#fff}
 .tspace{flex:1}
 .tbtn{border:1px solid var(--line);background:var(--warm);color:var(--brown);border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
-.card.mini{display:flex;align-items:center;gap:10px;padding:8px 10px}
+.card.mini{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:8px 10px}
 .mthumb{width:52px;height:52px;flex:0 0 auto;border-radius:8px;background-color:#efe7da;background-size:cover;background-position:center;border:1px solid var(--line)}
 .minfo{flex:1;min-width:0}
 .minfo>div{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
@@ -187,6 +187,9 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .card.mini.clk:hover{border-color:var(--brown2);box-shadow:0 2px 10px rgba(122,92,46,.12)}
 .card.mini.clk:active{transform:scale(.995)}
 .copen{flex:0 0 auto;color:var(--brown2);font-size:22px;font-weight:700;padding:0 2px 0 4px;opacity:.5}
+.mtop{display:flex;align-items:center;gap:10px}
+.qacts .btns{margin-top:0}
+.qacts .btns button{padding:9px 0;min-height:40px;font-size:13px}
 /* dropdown lọc trạng thái */
 .fsel{border:1px solid var(--line);background:#fff;color:var(--brown);border-radius:9px;padding:6px 26px 6px 10px;font-size:12.5px;font-weight:700;cursor:pointer;min-height:36px;max-width:64%;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%237a5c2e' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
 /* popup chi tiết bài (modal) — click thẻ mở ra, đầy đủ chức năng */
@@ -368,6 +371,26 @@ function approveAll(){ if(!confirm('Duyệt TẤT CẢ mục đang chờ? Sau b�
   api({action:'approve_all'}).then(function(j){ if(j.error) alert('Lỗi: '+j.error); refresh(); }); }
 function toggleCap(btn){ var c=btn.previousElementSibling; c.classList.toggle('open');
   btn.textContent = c.classList.contains('open') ? 'thu gọn ▴' : 'xem hết ▾'; }
+/* đổi tick "đã lên lịch" FB (dùng chung: checkbox trong popup + nút nhanh trên thẻ) */
+function setSched(id, val){ var p=post(id); if(!p) return;
+  p.owner_scheduled=val; renderFB(); renderSummary();
+  api({action:'set_scheduled', ids:[id], value:val}).then(function(j){
+    if(j.error){ p.owner_scheduled=!val; renderFB(); renderSummary(); alert('Lỗi lưu lịch: '+(j.error||'')); }
+  }); }
+/* hàng nút hành động trên thẻ gọn (bấm KHÔNG mở popup — .qacts stopPropagation).
+   IG/Ads = đủ bộ theo trạng thái (pending → Duyệt/Sửa/Bỏ) qua btnsHtml. FB = đánh dấu đã đăng tay (máy không đăng FB). */
+function actRow(p){
+  var inner='';
+  if(p.channel==='fb'){
+    if(p.status==='published') return '';
+    inner='<div class="btns">'+(fbDone(p)
+      ? '<button class="back" onclick="setSched('+p.id+',false)">↩︎ Bỏ lịch</button>'
+      : '<button class="ok" onclick="setSched('+p.id+',true)">🗓 Đã lên lịch</button>')+'</div>';
+  } else {
+    inner=btnsHtml('post', p);   // '' nếu published/publishing
+  }
+  return inner ? '<div class="qacts" onclick="event.stopPropagation()">'+inner+'</div>' : '';
+}
 
 /* nút hành động cho IG / Ads (giữ đúng luồng trạng thái trang cũ) */
 function btnsHtml(kind, p){ var s=p.status, h='<div class="btns">';
@@ -430,10 +453,13 @@ function toolbar(ch, opts, total){
 function miniCard(p){
   var media=p.media||[]; var u0=media.length?(media[0].thumb_url||media[0].url):'';
   return '<div class="card mini clk" data-open="'+p.channel+':'+p.id+'">'
+    +'<div class="mtop">'
     +(u0?'<div class="mthumb" style="background-image:url(\''+esc(u0)+'\')"></div>':'<div class="mthumb"></div>')
     +'<div class="minfo"><div><span class="bcode">'+esc(p.batch||('#'+p.id))+'</span> '+cardChip(p)+(cardLate(p)?' <span class="latebadge">⚠️ trễ</span>':'')+'</div>'
     +'<div class="msub">'+esc(timeHM(p.scheduled_at))+' · '+media.length+' ảnh · '+(p.format==='story'?'story':'bài ảnh')+'</div></div>'
-    +'<span class="copen">›</span></div>';
+    +'<span class="copen">›</span></div>'
+    + actRow(p)
+    +'</div>';
 }
 
 function canEditMedia(p){ return EDITABLE_UI.indexOf(p.status)>=0 && IMG_FMT.indexOf(p.format)>=0; }
@@ -731,11 +757,15 @@ function renderFB(){
 /* ============ ADS ============ */
 function adCard(a){                                         // cột = thẻ gọn
   var cr0=a.creative||{};
+  var b=btnsHtml('ad', a);                                  // Duyệt/Sửa/Bỏ (hoặc ▶️ đã bật) theo trạng thái
   return '<div class="card mini clk" data-open="ads:'+a.id+'">'
+    +'<div class="mtop">'
     +(cr0.image_url?'<div class="mthumb" style="background-image:url(\''+esc(cr0.image_url)+'\')"></div>':'<div class="mthumb"></div>')
     +'<div class="minfo"><div><span class="bcode">'+esc(a.name||('#'+a.id))+'</span> '+chip(a.status)+'</div>'
     +'<div class="msub">'+money(a.budget_vnd)+'/ngày · '+esc(a.objective||'')+'</div></div>'
-    +'<span class="copen">›</span></div>';
+    +'<span class="copen">›</span></div>'
+    +(b?'<div class="qacts" onclick="event.stopPropagation()">'+b+'</div>':'')
+    +'</div>';
 }
 function adDetail(a){                                       // popup = đầy đủ
   var cr=a.creative||{};
