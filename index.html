@@ -1,4 +1,4 @@
-<!doctype html><!-- build: ads-manager-structure 2026-07-06c -->
+<!doctype html><!-- build: ads-4muc-dongbo 2026-07-06d -->
 <html lang="vi"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Êm Như Mây · Bảng điều khiển đăng bài</title>
@@ -1006,16 +1006,31 @@ function adDetail(a){                                       // popup = đầy đ
   if(a.error) h+='<div class="err">'+esc(a.error)+'</div>';
   return h + editReqBlock('ad',a) + btnsHtml('ad',a) + '</div>';
 }
+/* bucket Ads = CÙNG 4 mục vòng đời như IG/FB (Gin chốt 6/7):
+   1 Chờ duyệt (pending · needs_edit-đã-xử-lý) · 2 Sắp lên (approved chờ dựng · created_paused chờ Gin bật) ·
+   3 Lỗi/Đang sửa/Đã bỏ (yêu-cầu-mở · failed · rejected) · 4 Đã bật (activated_by_owner) — tách cuối + toggle */
+function adBucket(a){
+  if(a.status==='activated_by_owner') return 4;
+  if(editState(a)==='open') return 3;
+  if(['failed','rejected'].indexOf(a.status)>=0) return 3;
+  if(['approved','created_paused'].indexOf(a.status)>=0) return 2;
+  return 1;                                   // pending · needs_edit-đã-xử-lý (chờ Duyệt lại)
+}
 function renderAds(){
   var host=document.getElementById('adsBody');
-  var A0=DATA.ads.slice().sort(function(a,b){ return SORT.ads==='asc'? a.id-b.id : b.id-a.id; });
-  var counts={}; A0.forEach(function(a){ counts[a.status]=(counts[a.status]||0)+1; });
-  var adsOpts=Object.keys(counts).map(function(s){ return {v:s, label:(STC[s]||{t:s}).t, count:counts[s]}; });
-  var eoA=A0.filter(function(a){ return editState(a)==='open'; }).length; if(eoA) adsOpts.push({v:'editopen', label:'✏️ Chờ sửa', count:eoA});
-  var A=!FILTER.ads ? A0 : A0.filter(function(a){ return FILTER.ads==='editopen' ? editState(a)==='open' : a.status===FILTER.ads; });
-  var isDone=function(a){ return ['activated_by_owner','rejected'].indexOf(a.status)>=0; };
-  var active=A.filter(function(a){ return !isDone(a); });
-  var done=A.filter(isDone);
+  var adDay=function(a){ return a.created_at; }; // ads không có scheduled_at → nhóm 📅 theo NGÀY TẠO
+  var A0=DATA.ads.slice();
+  var bc={1:0,2:0,3:0,4:0}, eoA=0;
+  A0.forEach(function(a){ bc[adBucket(a)]++; if(editState(a)==='open') eoA++; });
+  var f=FILTER.ads;
+  var A = !f ? A0 : A0.filter(function(a){ return f==='editopen' ? editState(a)==='open' : (''+adBucket(a))===f.slice(1); });
+  var srt=function(a,b){ var d=(Date.parse(a.created_at||0)||a.id)-(Date.parse(b.created_at||0)||b.id); return SORT.ads==='asc'?d:-d; };
+  var g={1:[],2:[],3:[],4:[]}; A.forEach(function(a){ g[adBucket(a)].push(a); });
+  g[1].sort(srt); g[2].sort(srt); g[3].sort(srt);
+  g[4].sort(function(a,b){ return (Date.parse(b.created_at||0)||b.id)-(Date.parse(a.created_at||0)||a.id); });
+  var adsOpts=[]; [1,2,3].forEach(function(n){ if(bc[n]) adsOpts.push({v:'b'+n, label:bucketLabel(n), count:bc[n]}); });
+  if(bc[4]) adsOpts.push({v:'b4', label:'✅ Đã bật', count:bc[4]});
+  if(eoA) adsOpts.push({v:'editopen', label:'✏️ Chờ sửa', count:eoA});
   var link = ADS_EXPLAIN_URL
     ? '<a class="explain" href="'+esc(ADS_EXPLAIN_URL)+'" target="_blank" rel="noopener">ℹ️ Trang giải thích Ads</a>'
     : '<span class="explain muted">ℹ️ (chưa gắn link trang giải thích Ads)</span>';
@@ -1023,11 +1038,14 @@ function renderAds(){
     + 'Bật chạy = Gin bấm tay rồi bấm "▶️ Tôi đã bật tay". <b>Máy KHÔNG bao giờ tự tiêu tiền.</b></div>'
     + '<div class="adslink">'+link+'</div>'
     + toolbar('ads', adsOpts, A0.length);
-  if(!A.length){ host.innerHTML = h+'<div class="empty">Chưa có ads nào'+(FILTER.ads?' (đang lọc)':'')+'.</div>'; return; }
-  var adDay=function(a){ return a.created_at; }; // ads không có scheduled_at → nhóm theo NGÀY TẠO
-  h+= active.length ? byDayCards(active, adCard, adDay) : '<div class="empty">Không có ads chờ xử lý.</div>';
-  h+='<div class="sech">✅ Đã bật / đã bỏ ('+done.length+')'+(done.length?'<button class="pubtoggle" data-donesec="ads">'+(SHOW_DONE.ads?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
-  if(SHOW_DONE.ads && done.length) h+= byDayCards(done, adCard, adDay);
+  h+='<div class="sech">'+bucketLabel(1)+' ('+g[1].length+')</div>';
+  h+= g[1].length ? byDayCards(g[1], adCard, adDay) : '<div class="empty">Trống.</div>';
+  h+='<div class="sech">'+bucketLabel(2)+' ('+g[2].length+')</div>';
+  h+= g[2].length ? byDayCards(g[2], adCard, adDay) : '<div class="empty">Trống.</div>';
+  h+='<div class="sech">'+bucketLabel(3)+' ('+g[3].length+')</div>';
+  h+= g[3].length ? byDayCards(g[3], adCard, adDay) : '<div class="empty">Trống.</div>';
+  h+='<div class="sech">✅ Đã bật · đang chạy ('+g[4].length+')'+(g[4].length?'<button class="pubtoggle" data-donesec="ads">'+(SHOW_DONE.ads?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
+  if(SHOW_DONE.ads) h+= g[4].length ? byDayCards(g[4], adCard, adDay) : '<div class="empty">Chưa có.</div>';
   host.innerHTML=h; if(DETAIL) renderDetail();
 }
 
