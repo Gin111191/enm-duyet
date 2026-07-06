@@ -1,4 +1,4 @@
-<!doctype html><!-- build: calendar-v2-dragdrop 2026-07-06f -->
+<!doctype html><!-- build: calendar-v3-polish 2026-07-06g -->
 <html lang="vi"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Êm Như Mây · Bảng điều khiển đăng bài</title>
@@ -192,29 +192,30 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 /* ===== CALENDAR VIEW (📅 Lịch) — bài = thẻ trong ô ngày · ads = thanh kéo dài trên đầu tuần ===== */
 #calWrap{padding:10px;max-width:1280px;margin:0 auto}
 .calhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px;padding:8px;background:var(--surf);border:1px solid var(--line);border-radius:10px}
-.calttl{font-family:'Iowan Old Style',Georgia,serif;font-size:16px;font-weight:700;color:var(--brown);min-width:120px;text-align:center}
+.calttl{font-family:'Iowan Old Style',Georgia,serif;font-size:16px;font-weight:700;color:var(--brown);min-width:168px;text-align:center;font-variant-numeric:tabular-nums}
+.rangesel{border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:11.5px;color:var(--brown);background:#fff;font-weight:700;cursor:pointer}
 .calhead .tbtn{min-height:36px}
 .callegend{display:flex;gap:4px 10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-left:auto;align-items:center}
 .callegend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:-1px}
 .calscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .calgrid{min-width:840px}
-.caldow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.caldow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:4px}
 .caldow span{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center;padding:4px 0}
 .calweek{margin-bottom:4px}
-.wkbars{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 4px;margin-bottom:2px}
-.adbar{border-radius:7px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border:1px solid;min-height:22px;line-height:16px}
+.wkbars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px 4px;margin-bottom:2px}
+.adbar{border-radius:7px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border:1px solid;min-height:22px;line-height:16px;min-width:0}
 .adbar:hover{box-shadow:0 1px 6px rgba(122,92,46,.25)}
 .adbar.bk1{background:#fdf3e0;border-color:#e8cf9f;color:#8a5d0e}
 .adbar.bk2{background:#e2ecf8;border-color:#b9d2ef;color:#2b6cb0}
 .adbar.bk3{background:#fdeaea;border-color:#f3cfca;color:#b3392f}
 .adbar.bk4{background:#e3efe1;border-color:#c4dcc7;color:#3f7a49}
-.wkcells{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.calcell{background:var(--card);border:1px solid var(--line);border-radius:10px;min-height:96px;padding:4px;display:flex;flex-direction:column;gap:3px}
+.wkcells{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.calcell{background:var(--card);border:1px solid var(--line);border-radius:10px;min-height:96px;padding:4px;display:flex;flex-direction:column;gap:3px;min-width:0}
 .calcell.om{background:transparent;opacity:.45}
 .calcell .dnum{font-size:11px;font-weight:800;color:var(--muted);padding:1px 3px}
 .calcell.today{border-color:var(--brown);box-shadow:0 0 0 1px var(--brown) inset}
 .calcell.today .dnum{color:#fff;background:var(--brown);border-radius:6px;align-self:flex-start;padding:1px 7px}
-.calchip{display:flex;align-items:center;gap:5px;border-radius:7px;padding:3px 5px;font-size:10.5px;font-weight:700;cursor:pointer;border:1px solid;border-left-width:4px;line-height:1.25;transition:box-shadow .12s}
+.calchip{display:flex;align-items:center;gap:5px;border-radius:7px;padding:3px 5px;font-size:10.5px;font-weight:700;cursor:pointer;border:1px solid;border-left-width:4px;line-height:1.25;transition:box-shadow .12s;min-width:0}
 .calchip:hover{box-shadow:0 1px 6px rgba(122,92,46,.25)}
 .calchip.bk1{background:#fdf3e0;border-color:#e8cf9f}
 .calchip.bk2{background:#e7f3f1;border-color:#bfe0da}
@@ -223,6 +224,7 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .calchip .cth{width:20px;height:20px;border-radius:5px;background-color:#efe7da;background-size:cover;background-position:center;flex:0 0 auto;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .calchip .cth .play{position:static;font-size:9px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
 .calchip .ct{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.clate{font-size:9px;font-weight:800;color:#fff;background:#c0392b;border-radius:5px;padding:1px 4px;white-space:nowrap;flex:0 0 auto}
 .cdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .cdot.ig{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}
 .cdot.fb{background:#1877f2}
@@ -235,7 +237,7 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 /* TUẦN/NGÀY: lưới giờ 0–23 */
 .hgrid{display:grid;gap:0 4px;align-items:stretch}
 .hgrid.hh{margin-bottom:4px}
-.hdr{text-align:center;font-weight:800;color:var(--brown);font-size:13px;padding:5px 0;border-radius:8px}
+.hdr{text-align:center;font-weight:800;color:var(--brown);font-size:13px;padding:5px 0;border-radius:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hdr small{color:var(--muted);font-weight:600;font-size:10.5px}
 .hdr.tdy{background:var(--brown);color:#fff}
 .hdr.tdy small{color:#f3e7d4}
@@ -430,8 +432,11 @@ var FBSTATE = {
 /* nhãn cho THẺ GỌN: FB theo fbState; IG theo status (ẩn chip needs_edit → để badge đỏ thể hiện, tránh trùng). */
 function cardChip(p){ if(p.channel==='fb'){ var s=FBSTATE[fbState(p)]; return '<span class="sc sc-'+s.c+'">'+esc(s.t)+'</span>'; }
   if(p.status==='needs_edit') return ''; return chip(p.status); }
-/* cờ "trễ" (gộp 2 cột): quá giờ · chưa đăng · không phải bài đã bỏ */
-function cardLate(p){ return isLate(p) && p.status!=='published' && !(p.channel==='fb' && p.owner_discarded); }
+/* cờ "trễ" (badge ĐỎ — Gin chốt 6/7): CHỈ cảnh báo khi quá giờ mà CHƯA XỬ LÝ —
+   FB: chưa-lên-lịch (đã tick lịch tay / đã bỏ / đã đăng → thôi) · IG: chờ-duyệt / chờ-sửa / lỗi (đã duyệt = máy sắp tự đăng → thôi) */
+function cardLate(p){ if(!isLate(p) || p.status==='published') return false;
+  if(p.channel==='fb') return !fbDone(p) && !p.owner_discarded;
+  return ['pending','needs_edit','failed'].indexOf(p.status)>=0; }
 
 /* ===== Yêu cầu sửa (THỐNG NHẤT IG/FB/Ads) — lưu ở edit_log (jsonb mảng) ===== */
 function editLog(o){ return Array.isArray(o && o.edit_log) ? o.edit_log : []; }
@@ -1136,7 +1141,8 @@ function applyView(){
   if(cal) renderCal();
 }
 function toggleView(){ VIEW = (VIEW==='cal'?'cols':'cal'); try{ localStorage.setItem('enm-view', VIEW); }catch(e){} applyView(); }
-var CALMODE=(function(){ try{ var v=localStorage.getItem('enm-calmode'); return ['day','week','month','year'].indexOf(v)>=0?v:'month'; }catch(e){ return 'month'; } })();
+var CALMODE=(function(){ try{ var v=localStorage.getItem('enm-calmode'); return ['day','week','month','year','range'].indexOf(v)>=0?v:'month'; }catch(e){ return 'month'; } })();
+var RANGEN=(function(){ try{ var n=+localStorage.getItem('enm-calrange'); return (n>=1&&n<=20)?n:4; }catch(e){ return 4; } })();   // chế độ "N ngày" tùy chọn 1–20
 function setCalMode(m){ CALMODE=m; try{ localStorage.setItem('enm-calmode',m); }catch(e){} renderCal(); }
 function vnDateStr(iso){ if(!iso) return ''; return new Date(iso).toLocaleDateString('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'}); }
 function calInit(){ if(CAL) return; var s=vnDateStr(DATA.now)||vnDateStr(new Date().toISOString()); CAL={y:+s.slice(0,4), m:+s.slice(5,7), d:+s.slice(8,10)}; }
@@ -1146,6 +1152,7 @@ function calNav(d){ calInit();
   else { var s=(d==='next'?1:-1);
     if(CALMODE==='day') calShift(s);
     else if(CALMODE==='week') calShift(7*s);
+    else if(CALMODE==='range') calShift(RANGEN*s);
     else if(CALMODE==='year') CAL.y+=s;
     else { CAL.m+=s; if(CAL.m<1){ CAL.m=12; CAL.y--; } if(CAL.m>12){ CAL.m=1; CAL.y++; } CAL.d=1; }
   }
@@ -1164,7 +1171,7 @@ function calChip(p){
     +'<span class="cdot '+p.channel+'"></span>'
     +(u0?'<span class="cth" style="background-image:url(\''+esc(u0)+'\')">'+(isVid0?'<span class="play">▶</span>':'')+'</span>':'')
     +'<span class="ct"><b>'+esc(timeHM(p.scheduled_at)||'—')+'</b> '+esc(p.batch||('#'+p.id))+'</span>'
-    +(cardLate(p)?'<span>⚠️</span>':'')
+    +(cardLate(p)?'<span class="clate">⏰ trễ</span>':'')
     +(editState(p)==='open'?'<span>✏️</span>':'')
     +'</div>';
 }
@@ -1188,12 +1195,16 @@ function dropTime(id, date, hour){
 /* đầu lịch dùng chung: ‹ tiêu-đề › + Hôm nay + 4 chế độ + chú giải */
 function calHead(title){
   function mb(m,l){ return '<button class="fchip'+(CALMODE===m?' on':'')+'" data-calmode="'+m+'">'+l+'</button>'; }
+  var rangeSel='';
+  if(CALMODE==='range'){ rangeSel='<select class="rangesel" data-rangen>';
+    for(var n=1;n<=20;n++) rangeSel+='<option value="'+n+'"'+(n===RANGEN?' selected':'')+'>'+n+' ngày</option>';
+    rangeSel+='</select>'; }
   return '<div class="calhead">'
     +'<button class="tbtn" data-calnav="prev">‹</button>'
     +'<span class="calttl">'+esc(title)+'</span>'
     +'<button class="tbtn" data-calnav="next">›</button>'
     +'<button class="tbtn" data-calnav="today">Hôm nay</button>'
-    +'<span class="calmodes">'+mb('day','Ngày')+mb('week','Tuần')+mb('month','Tháng')+mb('year','Năm')+'</span>'
+    +'<span class="calmodes">'+mb('day','Ngày')+mb('week','Tuần')+mb('month','Tháng')+mb('year','Năm')+mb('range','🗓 '+RANGEN+' ngày')+rangeSel+'</span>'
     +'<span class="callegend">'
       +'<span><i style="background:#fdf3e0;border:1px solid #e8cf9f"></i>chờ duyệt·lịch</span>'
       +'<span><i style="background:#e7f3f1;border:1px solid #bfe0da"></i>sắp lên</span>'
@@ -1245,21 +1256,22 @@ function renderCalMonth(){
   h+='</div></div>';
   return h;
 }
-/* ---- TUẦN (nDays=7, từ T2) / NGÀY (nDays=1): lưới giờ 0–23, ô giờ = drop target (đổi ngày + GIỜ, giữ phút) ---- */
-function renderCalGrid(nDays){
+/* ---- TUẦN (alignMon, 7 ngày từ T2) / NGÀY (1) / N-NGÀY tùy chọn (1–20, từ ngày đang đứng): lưới giờ 0–23, ô giờ = drop target ---- */
+function renderCalGrid(nDays, alignMon){
   var start;
-  if(nDays===7){ var dow=(new Date(Date.UTC(CAL.y,CAL.m-1,CAL.d)).getUTCDay()+6)%7; start=ymd(CAL.y,CAL.m,CAL.d-dow); }
+  if(alignMon){ var dow=(new Date(Date.UTC(CAL.y,CAL.m-1,CAL.d)).getUTCDay()+6)%7; start=ymd(CAL.y,CAL.m,CAL.d-dow); }
   else start=ymd(CAL.y,CAL.m,CAL.d);
   var sy=+start.slice(0,4), sm=+start.slice(5,7), sd=+start.slice(8,10);
   var days=[]; for(var i=0;i<nDays;i++) days.push(ymd(sy,sm,sd+i));
+  var last=days[nDays-1];
   var todayIso=vnDateStr(DATA.now)||'';
   var byDay={}; DATA.posts.forEach(function(p){ var d=vnDateStr(p.scheduled_at); if(d) (byDay[d]=byDay[d]||[]).push(p); });
-  var bars=adRanges().filter(function(bx){ return bx.s && bx.s<=days[nDays-1] && bx.e>=days[0]; });
+  var bars=adRanges().filter(function(bx){ return bx.s && bx.s<=last && bx.e>=days[0]; });
   var title = nDays===1 ? dayLabel(days[0]+'T12:00:00+07:00')
-    : (+days[0].slice(8,10))+'/'+(+days[0].slice(5,7))+' – '+(+days[6].slice(8,10))+'/'+(+days[6].slice(5,7))+'/'+days[6].slice(0,4);
-  var cols='grid-template-columns:44px repeat('+nDays+',1fr)';
+    : (+days[0].slice(8,10))+'/'+(+days[0].slice(5,7))+' – '+(+last.slice(8,10))+'/'+(+last.slice(5,7))+'/'+last.slice(0,4);
+  var cols='grid-template-columns:44px repeat('+nDays+',minmax(0,1fr))';
   var h=calHead(title);
-  h+='<div class="calscroll"><div'+(nDays===7?' class="calgrid"':'')+'>';
+  h+='<div class="calscroll"><div style="min-width:'+(nDays>4?(44+nDays*112):0)+'px">';
   // hàng tiêu đề ngày
   h+='<div class="hgrid hh" style="'+cols+'"><span></span>';
   days.forEach(function(iso){ var wd=dayLabel(iso+'T12:00:00+07:00').split(',')[0];
@@ -1314,8 +1326,9 @@ function renderCal(){
   calInit();
   var h;
   if(CALMODE==='year') h=renderCalYear();
-  else if(CALMODE==='week') h=renderCalGrid(7);
-  else if(CALMODE==='day') h=renderCalGrid(1);
+  else if(CALMODE==='week') h=renderCalGrid(7, true);
+  else if(CALMODE==='day') h=renderCalGrid(1, false);
+  else if(CALMODE==='range') h=renderCalGrid(RANGEN, false);
   else h=renderCalMonth();
   host.innerHTML=h;
 }
@@ -1384,6 +1397,8 @@ function wireBody(host){
   host.addEventListener('change', function(e){
     var sel=e.target.closest('select[data-filter]');
     if(sel){ var fch=sel.getAttribute('data-filter'); FILTER[fch]=sel.value; reRenderCol(fch); return; }
+    var rsel=e.target.closest('select[data-rangen]');
+    if(rsel){ RANGEN=Math.max(1,Math.min(20,+rsel.value||4)); try{ localStorage.setItem('enm-calrange',RANGEN); }catch(err){} renderCal(); return; }
     var cb=e.target.closest('[data-done]'); if(!cb) return;
     var id=+cb.getAttribute('data-done'); var val=cb.checked; var p=post(id);
     if(p) p.owner_scheduled=val;                          // đổi tức thì (optimistic)
