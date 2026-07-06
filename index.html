@@ -1,4 +1,4 @@
-<!doctype html><!-- build: ads-4muc-dongbo 2026-07-06d -->
+<!doctype html><!-- build: calendar-view 2026-07-06e -->
 <html lang="vi"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Êm Như Mây · Bảng điều khiển đăng bài</title>
@@ -189,6 +189,45 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .adslink{margin:0 2px 12px;font-size:12.5px}
 .explain{color:var(--brown);font-weight:600}
 .muted{color:var(--muted)}
+/* ===== CALENDAR VIEW (📅 Lịch) — bài = thẻ trong ô ngày · ads = thanh kéo dài trên đầu tuần ===== */
+#calWrap{padding:10px;max-width:1280px;margin:0 auto}
+.calhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px;padding:8px;background:var(--surf);border:1px solid var(--line);border-radius:10px}
+.calttl{font-family:'Iowan Old Style',Georgia,serif;font-size:16px;font-weight:700;color:var(--brown);min-width:120px;text-align:center}
+.calhead .tbtn{min-height:36px}
+.callegend{display:flex;gap:4px 10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-left:auto;align-items:center}
+.callegend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:-1px}
+.calscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.calgrid{min-width:840px}
+.caldow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.caldow span{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center;padding:4px 0}
+.calweek{margin-bottom:4px}
+.wkbars{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 4px;margin-bottom:2px}
+.adbar{border-radius:7px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border:1px solid;min-height:22px;line-height:16px}
+.adbar:hover{box-shadow:0 1px 6px rgba(122,92,46,.25)}
+.adbar.bk1{background:#fdf3e0;border-color:#e8cf9f;color:#8a5d0e}
+.adbar.bk2{background:#e2ecf8;border-color:#b9d2ef;color:#2b6cb0}
+.adbar.bk3{background:#fdeaea;border-color:#f3cfca;color:#b3392f}
+.adbar.bk4{background:#e3efe1;border-color:#c4dcc7;color:#3f7a49}
+.wkcells{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calcell{background:var(--card);border:1px solid var(--line);border-radius:10px;min-height:96px;padding:4px;display:flex;flex-direction:column;gap:3px}
+.calcell.om{background:transparent;opacity:.45}
+.calcell .dnum{font-size:11px;font-weight:800;color:var(--muted);padding:1px 3px}
+.calcell.today{border-color:var(--brown);box-shadow:0 0 0 1px var(--brown) inset}
+.calcell.today .dnum{color:#fff;background:var(--brown);border-radius:6px;align-self:flex-start;padding:1px 7px}
+.calchip{display:flex;align-items:center;gap:5px;border-radius:7px;padding:3px 5px;font-size:10.5px;font-weight:700;cursor:pointer;border:1px solid;border-left-width:4px;line-height:1.25;transition:box-shadow .12s}
+.calchip:hover{box-shadow:0 1px 6px rgba(122,92,46,.25)}
+.calchip.bk1{background:#fdf3e0;border-color:#e8cf9f}
+.calchip.bk2{background:#e7f3f1;border-color:#bfe0da}
+.calchip.bk3{background:#fdeaea;border-color:#f3cfca}
+.calchip.bk4{background:#f1f1ec;border-color:#ddddd2;opacity:.75}
+.calchip .cth{width:20px;height:20px;border-radius:5px;background-color:#efe7da;background-size:cover;background-position:center;flex:0 0 auto;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.calchip .cth .play{position:static;font-size:9px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.calchip .ct{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.cdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.cdot.ig{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}
+.cdot.fb{background:#1877f2}
+.calun{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 8px}
+.viewhide{display:none!important}
 /* gate */
 #gate{max-width:320px;margin:70px auto;text-align:center;padding:0 16px}
 #gate p{color:var(--brown)}
@@ -272,7 +311,7 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
   <div id="topbar">
     <header>
       <span class="ttl">☁️ Êm Như Mây · Bảng điều khiển</span>
-      <button onclick="refresh()">↻ Làm mới</button>
+      <span style="display:flex;gap:6px"><button id="viewBtn" onclick="toggleView()">📅 Lịch</button><button onclick="refresh()">↻ Làm mới</button></span>
     </header>
     <div class="sumbar" id="sum"></div>
     <div class="tabs" role="tablist">
@@ -286,6 +325,7 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
     <section class="col"        data-col="fb"><h2 class="colh">📮 Planner FB <small>Gin đăng tay</small></h2><div id="fbBody"></div></section>
     <section class="col"        data-col="ads"><h2 class="colh">📣 Ads</h2><div id="adsBody"></div></section>
   </div>
+  <section id="calWrap" hidden><div id="calBody"></div></section>
 </div>
 
 <input type="file" id="addfile" accept="image/*" style="display:none" onchange="onAddFile(this)">
@@ -310,6 +350,9 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 var API = 'https://hxucribafqcxsybovgmc.supabase.co/functions/v1/autopub-review';
 var PIN = sessionStorage.getItem('enm_pin') || '';
 var DATA = {posts:[], ads:[], now:null};
+/* chế độ xem: 'cols' (3 cột) | 'cal' (lịch tháng) — nhớ lựa chọn qua localStorage */
+var VIEW = (function(){ try{ return localStorage.getItem('enm-view')==='cal' ? 'cal' : 'cols'; }catch(e){ return 'cols'; } })();
+var CAL = null;   // {y,m} tháng đang xem trên lịch
 /* CEO: dán link "trang giải thích Ads" vào đây khi có (để trống = hiện dòng nhắc). */
 var ADS_EXPLAIN_URL = '';
 
@@ -882,6 +925,7 @@ function renderPosts(ch){
   h+='<div class="sech">'+bucketLabel(4)+' ('+g[4].length+')'+(g[4].length?'<button class="pubtoggle" data-pub="'+ch+'">'+(SHOW_PUB[ch]?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_PUB[ch]) h+= g[4].length ? byDayCards(g[4].slice(0,50), card) : '<div class="empty">Chưa có.</div>';
   host.innerHTML=h; measureCollages(); if(DETAIL) renderDetail();
+  if(VIEW==='cal') renderCal();   // đang xem lịch → cập nhật lịch theo (mọi thao tác optimistic đều gọi qua đây)
 }
 function renderIG(){ renderPosts('ig'); }
 
@@ -1047,6 +1091,94 @@ function renderAds(){
   h+='<div class="sech">✅ Đã bật · đang chạy ('+g[4].length+')'+(g[4].length?'<button class="pubtoggle" data-donesec="ads">'+(SHOW_DONE.ads?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
   if(SHOW_DONE.ads) h+= g[4].length ? byDayCards(g[4], adCard, adDay) : '<div class="empty">Chưa có.</div>';
   host.innerHTML=h; if(DETAIL) renderDetail();
+  if(VIEW==='cal') renderCal();
+}
+
+/* ============ CALENDAR VIEW (📅 Lịch) ============
+   Bài IG/FB = thẻ gọn trong Ô NGÀY (màu theo 4 mục vòng đời, bấm → mở ĐÚNG popup hiện tại).
+   Ads = THANH KÉO DÀI nhiều ngày nằm TRÊN ĐẦU mỗi hàng tuần (start_date→end_date; bấm → popup chiến dịch). */
+function applyView(){
+  var cal = VIEW==='cal';
+  document.querySelector('.cols').classList.toggle('viewhide', cal);
+  document.querySelector('.tabs').classList.toggle('viewhide', cal);
+  document.getElementById('calWrap').hidden = !cal;
+  document.getElementById('viewBtn').textContent = cal ? '📋 Cột' : '📅 Lịch';
+  if(cal) renderCal();
+}
+function toggleView(){ VIEW = (VIEW==='cal'?'cols':'cal'); try{ localStorage.setItem('enm-view', VIEW); }catch(e){} applyView(); }
+function vnDateStr(iso){ if(!iso) return ''; return new Date(iso).toLocaleDateString('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'}); }
+function calInit(){ if(CAL) return; var s=vnDateStr(DATA.now)||vnDateStr(new Date().toISOString()); CAL={y:+s.slice(0,4), m:+s.slice(5,7)}; }
+function calNav(d){ calInit();
+  if(d==='today'){ CAL=null; calInit(); }
+  else if(d==='prev'){ CAL.m--; if(CAL.m<1){ CAL.m=12; CAL.y--; } }
+  else { CAL.m++; if(CAL.m>12){ CAL.m=1; CAL.y++; } }
+  renderCal(); }
+function ymd(y,m,d){ return new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10); }   // tự xử tràn tháng (d=0 → cuối tháng trước)
+function calChip(p){
+  var media=p.media||[]; var u0=media.length?(media[0].thumb_url||media[0].url):'';
+  var isVid0=media.length&&(media[0].kind||'')==='video';
+  return '<div class="calchip bk'+postBucket(p)+'" data-open="'+p.channel+':'+p.id+'" title="'+esc(p.batch||('#'+p.id))+'">'
+    +'<span class="cdot '+p.channel+'"></span>'
+    +(u0?'<span class="cth" style="background-image:url(\''+esc(u0)+'\')">'+(isVid0?'<span class="play">▶</span>':'')+'</span>':'')
+    +'<span class="ct"><b>'+esc(timeHM(p.scheduled_at)||'—')+'</b> '+esc(p.batch||('#'+p.id))+'</span>'
+    +(cardLate(p)?'<span>⚠️</span>':'')
+    +(editState(p)==='open'?'<span>✏️</span>':'')
+    +'</div>';
+}
+function renderCal(){
+  var host=document.getElementById('calBody'); if(!host) return;
+  calInit();
+  var y=CAL.y, m=CAL.m;
+  var startOff=(new Date(Date.UTC(y,m-1,1)).getUTCDay()+6)%7;   // Thứ 2 = cột đầu
+  var dim=new Date(Date.UTC(y,m,0)).getUTCDate();
+  var weeks=Math.ceil((startOff+dim)/7);
+  var todayIso=vnDateStr(DATA.now)||'';
+  var byDay={}, unsched=[];
+  DATA.posts.forEach(function(p){ var d=vnDateStr(p.scheduled_at); if(!d){ unsched.push(p); return; } (byDay[d]=byDay[d]||[]).push(p); });
+  for(var k in byDay) byDay[k].sort(byTime);
+  var bars=DATA.ads.map(function(a){ var s=a.start_date||vnDateStr(a.created_at), e=a.end_date||s; return {a:a, s:s, e:(e<s?s:e)}; });
+  var h='<div class="calhead">'
+    +'<button class="tbtn" data-calnav="prev">‹</button>'
+    +'<span class="calttl">Tháng '+m+'/'+y+'</span>'
+    +'<button class="tbtn" data-calnav="next">›</button>'
+    +'<button class="tbtn" data-calnav="today">Hôm nay</button>'
+    +'<span class="callegend">'
+      +'<span><i style="background:#fdf3e0;border:1px solid #e8cf9f"></i>chờ duyệt·lịch</span>'
+      +'<span><i style="background:#e7f3f1;border:1px solid #bfe0da"></i>sắp lên</span>'
+      +'<span><i style="background:#fdeaea;border:1px solid #f3cfca"></i>lỗi·sửa·bỏ</span>'
+      +'<span><i style="background:#f1f1ec;border:1px solid #ddddd2"></i>đã đăng</span>'
+      +'<span><span class="cdot ig" style="display:inline-block;vertical-align:-1px"></span> IG</span>'
+      +'<span><span class="cdot fb" style="display:inline-block;vertical-align:-1px"></span> FB</span>'
+      +'<span>📣 thanh trên = ads</span>'
+    +'</span></div>';
+  if(unsched.length) h+='<div class="sech">🕓 Chưa hẹn giờ ('+unsched.length+')</div><div class="calun">'+unsched.map(calChip).join('')+'</div>';
+  h+='<div class="calscroll"><div class="calgrid">';
+  h+='<div class="caldow"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div>';
+  for(var w=0;w<weeks;w++){
+    var wDays=[]; for(var i=0;i<7;i++) wDays.push(w*7+i-startOff+1);
+    var wIso=wDays.map(function(dn){ return ymd(y,m,dn); });
+    var wStart=wIso[0], wEnd=wIso[6];
+    h+='<div class="calweek"><div class="wkbars">';
+    bars.forEach(function(bx,bi){
+      if(!bx.s || bx.e<wStart || bx.s>wEnd) return;
+      var c1=1, c2=7;
+      for(var i=0;i<7;i++){ if(wIso[i]===bx.s) c1=i+1; if(wIso[i]===bx.e) c2=i+1; }
+      if(bx.s<wStart) c1=1; if(bx.e>wEnd) c2=7;
+      var a=bx.a;
+      h+='<div class="adbar bk'+adBucket(a)+'" data-open="ads:'+a.id+'" style="grid-column:'+c1+'/'+(c2+1)+';grid-row:'+(bi+1)+'" title="'+esc(a.name||'')+'">'
+        +(bx.s<wStart?'‹ ':'')+'📣 '+esc(a.name||('#'+a.id))+(bx.e>wEnd?' ›':'')+'</div>';
+    });
+    h+='</div><div class="wkcells">';
+    for(var i=0;i<7;i++){
+      var iso=wIso[i], inM=(wDays[i]>=1 && wDays[i]<=dim);
+      h+='<div class="calcell'+(inM?'':' om')+(iso===todayIso?' today':'')+'"><span class="dnum">'+(+iso.slice(8,10))+'</span>'
+        +(byDay[iso]||[]).map(calChip).join('')
+        +'</div>';
+    }
+    h+='</div></div>';
+  }
+  h+='</div></div>';
+  host.innerHTML=h;
 }
 
 /* ============ summary + tabs ============ */
@@ -1101,6 +1233,7 @@ function wireBody(host){
     if((el=e.target.closest('[data-pub]'))){ togglePub(el.getAttribute('data-pub')); return; }
     if((el=e.target.closest('[data-donesec]'))){ toggleDone(el.getAttribute('data-donesec')); return; }
     if((el=e.target.closest('[data-sort]'))){ toggleSort(el.getAttribute('data-sort')); return; }
+    if((el=e.target.closest('[data-calnav]'))){ calNav(el.getAttribute('data-calnav')); return; }
     if((el=e.target.closest('[data-open]'))){ var op=el.getAttribute('data-open').split(':'); openDetail(op[0], +op[1]); return; }
     if((el=e.target.closest('[data-copy]'))){ var p=post(el.getAttribute('data-pid')); if(!p) return;
       copyText(el.getAttribute('data-copy')==='cap' ? (p.caption||'') : (p.first_comment_text||''), el); return; }
@@ -1197,6 +1330,7 @@ function refresh(){
     DATA={posts:j.posts||[], ads:j.ads||[], now:j.now};
     LBSETS={};
     renderSummary(); renderIG(); renderFB(); renderAds();
+    applyView();
     migrateFbDone();
   });
 }
@@ -1206,6 +1340,7 @@ wireBody(document.getElementById('igBody'));
 wireBody(document.getElementById('fbBody'));
 wireBody(document.getElementById('adsBody'));   // để nút ẩn/hiện (data-donesec) + lightbox ảnh Ads hoạt động
 wireBody(document.getElementById('detailBody')); // popup: mọi tương tác (sửa ảnh/copy/tick/duyệt/lightbox) chạy trong modal
+wireBody(document.getElementById('calBody'));    // lịch: thẻ bài + thanh ads (data-open) + nút tháng (data-calnav)
 document.addEventListener('keydown', function(e){ if(e.key!=='Escape') return;
   if(document.getElementById('lb').classList.contains('on')) closeLB();
   else if(DETAIL) closeDetail(); });
