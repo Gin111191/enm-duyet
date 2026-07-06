@@ -1,4 +1,4 @@
-<!doctype html><!-- build: reel-thumb-lichdang-ngaytrongmuc 2026-07-06b -->
+<!doctype html><!-- build: ads-manager-structure 2026-07-06c -->
 <html lang="vi"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Êm Như Mây · Bảng điều khiển đăng bài</title>
@@ -202,6 +202,23 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 /* preview Reel (video) trong popup — khung 9:16 như IG/FB thật */
 .reelcov{position:relative;width:100%;max-width:240px;aspect-ratio:9/16;margin:0 auto;background-color:#111;background-size:cover;background-position:center;border-radius:6px;cursor:pointer}
 .reelcov .playbig{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.65)}
+/* Ads kiểu Ads Manager: chiến dịch → nhóm QC → bài ads */
+.cinfo{background:var(--warm);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13px}
+.cinfo .row{margin:3px 0}
+.cinfo .lbl{font-weight:800;color:var(--brown);margin-right:4px}
+.cinfo ul{margin:6px 0 0;padding-left:18px}
+.cinfo li{font-size:12.5px;margin:2px 0}
+.adset{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:12px 0;background:var(--white)}
+.adset>h4{margin:0 0 6px;font-size:14px;color:var(--brown)}
+.adprop{font-size:12.5px;color:var(--brown2);margin:2px 0}
+.adprop b{color:var(--brown)}
+.adrow{display:flex;gap:10px;align-items:flex-start;background:var(--warm);border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin:7px 0}
+.adrow .athumb{position:relative;overflow:hidden;width:46px;height:60px;flex:0 0 auto;border-radius:7px;background-color:#efe7da;background-size:cover;background-position:center;cursor:pointer}
+.adrow .athumb .play{font-size:14px}
+.adrow .ainfo{flex:1;min-width:0;font-size:12.5px}
+.adrow .ainfo .anm{font-weight:800;color:var(--brown);font-size:13px}
+.adrow .ainfo .adesc{margin:2px 0;color:var(--ink)}
+.adrow .ainfo .atag{display:inline-block;font-size:11px;font-weight:700;color:var(--brown2);background:#fff;border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin:2px 4px 0 0}
 /* đổi ngày giờ đăng */
 .schedrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;padding:9px 11px;background:var(--warm);border:1px solid var(--line);border-radius:10px;font-size:13px}
 .schedrow .lbl{font-weight:800;color:var(--brown)}
@@ -916,24 +933,76 @@ function fbDetail(p){                                       // popup = đầy đ
 function renderFB(){ renderPosts('fb'); }
 
 /* ============ ADS ============ */
-function adCard(a){                                         // cột = thẻ gọn
-  var cr0=a.creative||{};
+function postByBatch(b){ if(!b) return null; for(var i=0;i<DATA.posts.length;i++) if(DATA.posts[i].batch===b) return DATA.posts[i]; return null; }
+function adThumbOf(ad){ var p=postByBatch(ad.post_batch); if(!p||!(p.media||[]).length) return null;
+  var m=p.media[0]; return {img:m.thumb_url||m.url, url:m.url, vid:(m.kind||'')==='video'}; }
+function adCard(a){                                         // cột = thẻ gọn (structure = CHIẾN DỊCH)
+  var cr0=a.creative||{}, st=a.structure;
   var b=btnsHtml('ad', a, true);                            // nhãn ngắn Duyệt/Sửa/Bỏ (hoặc Đã bật) theo trạng thái
+  var thumb='', sub='';
+  if(st && st.adsets){
+    var nAds=0; st.adsets.forEach(function(s){ nAds+=(s.ads||[]).length; });
+    var t0=null;
+    for(var i=0;i<st.adsets.length && !t0;i++){ var ads=st.adsets[i].ads||[]; for(var j=0;j<ads.length;j++){ t0=adThumbOf(ads[j]); if(t0) break; } }
+    thumb = t0 ? '<div class="mthumb" style="background-image:url(\''+esc(t0.img)+'\')">'+(t0.vid?'<span class="play" style="font-size:16px">▶</span>':'')+'</div>' : '<div class="mthumb"></div>';
+    sub = money(a.budget_vnd)+'/ngày · '+st.adsets.length+' nhóm QC · '+nAds+' bài ads';
+  } else {
+    thumb = cr0.image_url?'<div class="mthumb" style="background-image:url(\''+esc(cr0.image_url)+'\')"></div>':'<div class="mthumb"></div>';
+    sub = money(a.budget_vnd)+'/ngày · '+esc(a.objective||'');
+  }
   return '<div class="card mini clk" data-open="ads:'+a.id+'">'
-    +(cr0.image_url?'<div class="mthumb" style="background-image:url(\''+esc(cr0.image_url)+'\')"></div>':'<div class="mthumb"></div>')
+    +thumb
     +'<div class="minfo"><div><span class="bcode">'+esc(a.name||('#'+a.id))+'</span> '+chip(a.status)+editBadge(a)+'</div>'
-    +'<div class="msub">'+money(a.budget_vnd)+'/ngày · '+esc(a.objective||'')+'</div></div>'
+    +'<div class="msub">'+sub+'</div></div>'
     +(b?'<div class="qacts" onclick="event.stopPropagation()">'+b+'</div>':'')
     +'</div>';
 }
 function adDetail(a){                                       // popup = đầy đủ
-  var cr=a.creative||{};
+  var cr=a.creative||{}, st=a.structure;
   var h='<div class="card"><div class="meta"><span class="chchip ads">ADS</span>'
     + '<span class="bcode">'+esc(a.name||('#'+a.id))+'</span>'+chip(a.status)+'<span class="id">#'+a.id+'</span></div>';
-  if(cr.image_url) h+=thumbStrip([{url:cr.image_url}],'ad'+a.id);
-  h+='<div class="cap">Mục tiêu: '+esc(a.objective||'—')+'\nĐối tượng: '+esc(a.audience||'—')
-    + '\nNgân sách: '+money(a.budget_vnd)+'/ngày\nLịch: '+esc(a.schedule_note||'—')
-    + (cr.primary_text ? '\n\nNội dung:\n'+esc(cr.primary_text) : '') + '</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
+  if(st && st.adsets){
+    // ===== CẤU TRÚC KIỂU ADS MANAGER: Chiến dịch → Nhóm QC → Bài ads =====
+    var c=st.campaign||{};
+    h+='<div class="cinfo">'
+      +(c.name?'<div class="row"><span class="lbl">📣 Chiến dịch:</span>'+esc(c.name)+'</div>':'')
+      +(c.objective?'<div class="row"><span class="lbl">🎯 Mục tiêu:</span>'+esc(c.objective)+'</div>':'')
+      +(c.budget?'<div class="row"><span class="lbl">💰 Ngân sách:</span>'+esc(c.budget)+'</div>':'')
+      +(c.guard?'<div class="row"><span class="lbl">🛑 Chốt chặn:</span>'+esc(c.guard)+'</div>':'')
+      +(c.schedule?'<div class="row"><span class="lbl">🗓 Lịch:</span>'+esc(c.schedule)+'</div>':'')
+      +((c.notes&&c.notes.length)?'<ul>'+c.notes.map(function(n){ return '<li>'+esc(n)+'</li>'; }).join('')+'</ul>':'')
+      +'</div>';
+    st.adsets.forEach(function(s,si){
+      h+='<div class="adset"><h4>'+esc(s.name||('Nhóm '+(si+1)))+'</h4>'
+        +(s.audience?'<div class="adprop"><b>Tệp:</b> '+esc(s.audience)+'</div>':'')
+        +(s.budget?'<div class="adprop"><b>Ngân sách:</b> '+esc(s.budget)+'</div>':'')
+        +(s.placement?'<div class="adprop"><b>Vị trí:</b> '+esc(s.placement)+'</div>':'')
+        +(s.schedule?'<div class="adprop"><b>Lịch:</b> '+esc(s.schedule)+'</div>':'');
+      (s.ads||[]).forEach(function(ad,ai){
+        var t=adThumbOf(ad), key='adx'+a.id+'_'+si+'_'+ai;
+        var th='<div class="athumb"></div>';
+        if(t){ LBSETS[key]=[t.url];
+          th='<div class="athumb" data-lb="'+key+'" data-lbi="0" style="background-image:url(\''+esc(t.img)+'\')">'+(t.vid?'<span class="play">▶</span>':'')+'</div>'; }
+        h+='<div class="adrow">'+th+'<div class="ainfo">'
+          +'<div class="anm">'+esc(ad.name||'')+'</div>'
+          +(ad.desc?'<div class="adesc">'+esc(ad.desc)+'</div>':'')
+          +(ad.post_batch?'<span class="atag">📎 dùng bài sẵn: '+esc(ad.post_batch)+'</span>':'<span class="atag">✏️ nội dung mới</span>')
+          +(ad.cta?'<span class="atag">CTA: '+esc(ad.cta)+'</span>':'')
+          +(ad.from?'<span class="atag">chạy từ '+esc(ad.from)+'</span>':'')
+          +'</div></div>';
+      });
+      h+='</div>';
+    });
+    (st.optional||[]).forEach(function(o){
+      h+='<div class="adset" style="border-style:dashed;opacity:.85"><h4>'+esc(o.name||'Tùy chọn')+'</h4>'
+        +(o.desc?'<div class="adprop">'+esc(o.desc)+'</div>':'')+'</div>';
+    });
+  } else {
+    if(cr.image_url) h+=thumbStrip([{url:cr.image_url}],'ad'+a.id);
+    h+='<div class="cap">Mục tiêu: '+esc(a.objective||'—')+'\nĐối tượng: '+esc(a.audience||'—')
+      + '\nNgân sách: '+money(a.budget_vnd)+'/ngày\nLịch: '+esc(a.schedule_note||'—')
+      + (cr.primary_text ? '\n\nNội dung:\n'+esc(cr.primary_text) : '') + '</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
+  }
   if(a.error) h+='<div class="err">'+esc(a.error)+'</div>';
   return h + editReqBlock('ad',a) + btnsHtml('ad',a) + '</div>';
 }
