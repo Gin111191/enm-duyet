@@ -1,4 +1,4 @@
-<!doctype html><!-- build: calendar-v3-polish 2026-07-06g -->
+<!doctype html><!-- build: channel-logos 2026-07-06h -->
 <html lang="vi"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Êm Như Mây · Bảng điều khiển đăng bài</title>
@@ -225,9 +225,12 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .calchip .cth .play{position:static;font-size:9px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
 .calchip .ct{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
 .clate{font-size:9px;font-weight:800;color:#fff;background:#c0392b;border-radius:5px;padding:1px 4px;white-space:nowrap;flex:0 0 auto}
-.cdot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
-.cdot.ig{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}
-.cdot.fb{background:#1877f2}
+/* logo kênh (SVG nhúng data-URI — tự chứa, không tải ngoài) */
+.chico{display:inline-block;width:14px;height:14px;flex:0 0 auto;background-size:contain;background-repeat:no-repeat;background-position:center;vertical-align:-2px}
+.chico.ig{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23f9ce34'/%3E%3Cstop offset='.55' stop-color='%23ee2a7b'/%3E%3Cstop offset='1' stop-color='%236228d7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='24' height='24' rx='6' fill='url(%23g)'/%3E%3Crect x='6.2' y='6.2' width='11.6' height='11.6' rx='3.4' fill='none' stroke='%23fff' stroke-width='1.7'/%3E%3Ccircle cx='12' cy='12' r='2.8' fill='none' stroke='%23fff' stroke-width='1.7'/%3E%3Ccircle cx='15.7' cy='8.3' r='1.05' fill='%23fff'/%3E%3C/svg%3E")}
+.chico.fb{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%231877f2'/%3E%3Cpath fill='%23fff' d='M13.4 20v-6.9h2.3l.35-2.7H13.4V8.7c0-.78.22-1.31 1.34-1.31h1.43V4.97c-.25-.03-1.1-.1-2.08-.1-2.06 0-3.47 1.25-3.47 3.56v1.98H8.3v2.7h2.32V20h2.78z'/%3E%3C/svg%3E")}
+.calchip .chico{width:13px;height:13px}
+.card.mini .chico{width:16px;height:16px}
 .calun{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 8px}
 .calmodes{display:flex;gap:4px}
 /* kéo-thả thẻ lịch */
@@ -686,7 +689,7 @@ function miniCard(p){
   var kindLbl=(p.format==='story'?'story':(p.format==='reel'?'🎬 reel':'bài ảnh'));
   return '<div class="card mini clk" data-open="'+p.channel+':'+p.id+'">'
     +(u0?'<div class="mthumb" style="background-image:url(\''+esc(u0)+'\')">'+(isVid0?'<span class="play" style="font-size:16px">▶</span>':'')+'</div>':'<div class="mthumb"></div>')
-    +'<div class="minfo"><div><span class="bcode">'+esc(p.batch||('#'+p.id))+'</span> '+cardChip(p)+(cardLate(p)?' <span class="latebadge">⚠️ trễ</span>':'')+editBadge(p)+'</div>'
+    +'<div class="minfo"><div><span class="chico '+p.channel+'"></span><span class="bcode">'+esc(p.batch||('#'+p.id))+'</span> '+cardChip(p)+(cardLate(p)?' <span class="latebadge">⏰ trễ</span>':'')+editBadge(p)+'</div>'
     +'<div class="msub">'+esc(timeHM(p.scheduled_at))+' · '+media.length+' '+(p.format==='reel'?'clip':'ảnh')+' · '+kindLbl+'</div></div>'
     + actRow(p)
     +'</div>';
@@ -1168,7 +1171,7 @@ function calChip(p){
   var isVid0=media.length&&(media[0].kind||'')==='video';
   var dg=canDrag(p);
   return '<div class="calchip bk'+postBucket(p)+(dg?' drg':'')+'" data-open="'+p.channel+':'+p.id+'" data-cid="'+p.id+'"'+(dg?' draggable="true"':'')+' title="'+esc(p.batch||('#'+p.id))+'">'
-    +'<span class="cdot '+p.channel+'"></span>'
+    +'<span class="chico '+p.channel+'"></span>'
     +(u0?'<span class="cth" style="background-image:url(\''+esc(u0)+'\')">'+(isVid0?'<span class="play">▶</span>':'')+'</span>':'')
     +'<span class="ct"><b>'+esc(timeHM(p.scheduled_at)||'—')+'</b> '+esc(p.batch||('#'+p.id))+'</span>'
     +(cardLate(p)?'<span class="clate">⏰ trễ</span>':'')
@@ -1210,8 +1213,8 @@ function calHead(title){
       +'<span><i style="background:#e7f3f1;border:1px solid #bfe0da"></i>sắp lên</span>'
       +'<span><i style="background:#fdeaea;border:1px solid #f3cfca"></i>lỗi·sửa·bỏ</span>'
       +'<span><i style="background:#f1f1ec;border:1px solid #ddddd2"></i>đã đăng</span>'
-      +'<span><span class="cdot ig" style="display:inline-block;vertical-align:-1px"></span> IG</span>'
-      +'<span><span class="cdot fb" style="display:inline-block;vertical-align:-1px"></span> FB</span>'
+      +'<span><span class="chico ig"></span> IG</span>'
+      +'<span><span class="chico fb"></span> FB</span>'
       +'<span>📣 thanh = ads</span><span>🖐 giữ-kéo thẻ = đổi lịch</span>'
     +'</span></div>';
 }
