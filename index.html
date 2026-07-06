@@ -1,4 +1,4 @@
-<!doctype html><!-- build: calendar-view 2026-07-06e -->
+<!doctype html><!-- build: calendar-v2-dragdrop 2026-07-06f -->
 <html lang="vi"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Êm Như Mây · Bảng điều khiển đăng bài</title>
@@ -227,6 +227,31 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .cdot.ig{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}
 .cdot.fb{background:#1877f2}
 .calun{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 8px}
+.calmodes{display:flex;gap:4px}
+/* kéo-thả thẻ lịch */
+.calchip.drg{cursor:grab}
+.calchip.drag{opacity:.5;outline:2px solid var(--brown2)}
+.calcell.dropover,.hourcell.dropover{outline:2px dashed var(--brown);outline-offset:-2px;background:#f7efdf}
+/* TUẦN/NGÀY: lưới giờ 0–23 */
+.hgrid{display:grid;gap:0 4px;align-items:stretch}
+.hgrid.hh{margin-bottom:4px}
+.hdr{text-align:center;font-weight:800;color:var(--brown);font-size:13px;padding:5px 0;border-radius:8px}
+.hdr small{color:var(--muted);font-weight:600;font-size:10.5px}
+.hdr.tdy{background:var(--brown);color:#fff}
+.hdr.tdy small{color:#f3e7d4}
+.hgrid.hr{border-top:1px solid var(--line)}
+.hlab{font-size:10px;color:var(--muted);text-align:right;padding:3px 4px 0 0;font-variant-numeric:tabular-nums}
+.hourcell{min-height:26px;border-left:1px solid var(--line);padding:2px;display:flex;flex-direction:column;gap:2px}
+.hourcell.tdy{background:#fdfaf3}
+/* NĂM: 12 tháng mini */
+.yeargrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.ymon{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.ymt{font-weight:800;color:var(--brown);font-size:13px;margin-bottom:6px;cursor:pointer}
+.ymg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.ymw{font-size:9px;color:var(--muted);font-weight:700}
+.ymd{font-size:11px;padding:3px 0;border-radius:6px;cursor:pointer;color:var(--ink)}
+.ymd.has{background:var(--warm);font-weight:800;color:var(--brown)}
+.ymd.tdy{background:var(--brown);color:#fff;font-weight:800}
 .viewhide{display:none!important}
 /* gate */
 #gate{max-width:320px;margin:70px auto;text-align:center;padding:0 16px}
@@ -621,6 +646,9 @@ var SAVING = {};      // SAVING[id]=true khi đang lưu (khóa thao tác chồng
 var UNDO = {};        // UNDO[id]=mảng ảnh trước đó (hoàn tác)
 var ADD_TARGET = null;
 var DRAG = null;
+var CDRAG = null;      // đang kéo thẻ LỊCH (đổi lịch đăng) — {id}
+var CDROPEL = null;    // ô đang highlight khi kéo qua
+function calClearDrop(){ if(CDROPEL){ CDROPEL.classList.remove('dropover'); CDROPEL=null; } }
 var SWALLOW_CLICK = false;   // true ngay sau khi kéo-thả cảm ứng → nuốt cú click kế (đừng mở lightbox)
 var SHOW_PUB = {ig:false, fb:false};       // ẩn bài ĐÃ ĐĂNG mặc định (đỡ tốn tài nguyên); bấm mới hiện
 var SHOW_DONE = {fb:false, ads:false, fbdisc:false};   // ẩn mục "đã xử lý" (FB: qua giờ · FB đã bỏ · Ads: đã bật/bỏ) mặc định
@@ -1095,8 +1123,10 @@ function renderAds(){
 }
 
 /* ============ CALENDAR VIEW (📅 Lịch) ============
-   Bài IG/FB = thẻ gọn trong Ô NGÀY (màu theo 4 mục vòng đời, bấm → mở ĐÚNG popup hiện tại).
-   Ads = THANH KÉO DÀI nhiều ngày nằm TRÊN ĐẦU mỗi hàng tuần (start_date→end_date; bấm → popup chiến dịch). */
+   4 chế độ NGÀY/TUẦN/THÁNG/NĂM (kiểu Google Calendar) + KÉO-THẢ thẻ bài đổi lịch đăng.
+   Bài IG/FB = thẻ gọn (màu theo 4 mục vòng đời, bấm → mở ĐÚNG popup hiện tại).
+   Ads = THANH KÉO DÀI nhiều ngày nằm TRÊN ĐẦU (start_date→end_date; bấm → popup; KHÔNG kéo được — lịch ads là kế hoạch Gin duyệt).
+   Kéo-thả: thả ô NGÀY (tháng) = đổi ngày GIỮ giờ · thả ô GIỜ (tuần/ngày) = đổi ngày + giờ (giữ phút) → cùng action set_time như nút 💾. */
 function applyView(){
   var cal = VIEW==='cal';
   document.querySelector('.cols').classList.toggle('viewhide', cal);
@@ -1106,18 +1136,31 @@ function applyView(){
   if(cal) renderCal();
 }
 function toggleView(){ VIEW = (VIEW==='cal'?'cols':'cal'); try{ localStorage.setItem('enm-view', VIEW); }catch(e){} applyView(); }
+var CALMODE=(function(){ try{ var v=localStorage.getItem('enm-calmode'); return ['day','week','month','year'].indexOf(v)>=0?v:'month'; }catch(e){ return 'month'; } })();
+function setCalMode(m){ CALMODE=m; try{ localStorage.setItem('enm-calmode',m); }catch(e){} renderCal(); }
 function vnDateStr(iso){ if(!iso) return ''; return new Date(iso).toLocaleDateString('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'}); }
-function calInit(){ if(CAL) return; var s=vnDateStr(DATA.now)||vnDateStr(new Date().toISOString()); CAL={y:+s.slice(0,4), m:+s.slice(5,7)}; }
+function calInit(){ if(CAL) return; var s=vnDateStr(DATA.now)||vnDateStr(new Date().toISOString()); CAL={y:+s.slice(0,4), m:+s.slice(5,7), d:+s.slice(8,10)}; }
+function calShift(days){ var t=new Date(Date.UTC(CAL.y,CAL.m-1,(CAL.d||1)+days)); CAL={y:t.getUTCFullYear(), m:t.getUTCMonth()+1, d:t.getUTCDate()}; }
 function calNav(d){ calInit();
   if(d==='today'){ CAL=null; calInit(); }
-  else if(d==='prev'){ CAL.m--; if(CAL.m<1){ CAL.m=12; CAL.y--; } }
-  else { CAL.m++; if(CAL.m>12){ CAL.m=1; CAL.y++; } }
+  else { var s=(d==='next'?1:-1);
+    if(CALMODE==='day') calShift(s);
+    else if(CALMODE==='week') calShift(7*s);
+    else if(CALMODE==='year') CAL.y+=s;
+    else { CAL.m+=s; if(CAL.m<1){ CAL.m=12; CAL.y--; } if(CAL.m>12){ CAL.m=1; CAL.y++; } CAL.d=1; }
+  }
   renderCal(); }
 function ymd(y,m,d){ return new Date(Date.UTC(y,m-1,d)).toISOString().slice(0,10); }   // tự xử tràn tháng (d=0 → cuối tháng trước)
+function vnHM(iso){ if(!iso) return '09:00'; return new Date(iso).toLocaleString('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'}).slice(11,16); }
+function vnHour(iso){ if(!iso) return null; return +vnHM(iso).slice(0,2); }
+/* bài nào KÉO đổi lịch được — khớp guard edge set_time (published/publishing/đã-vào-lịch-Meta thì không) */
+function canDrag(p){ return p.status!=='published' && p.status!=='publishing' && !p.fb_post_id; }
+function adRanges(){ return DATA.ads.map(function(a){ var s=a.start_date||vnDateStr(a.created_at), e=a.end_date||s; return {a:a, s:s, e:(e<s?s:e)}; }); }
 function calChip(p){
   var media=p.media||[]; var u0=media.length?(media[0].thumb_url||media[0].url):'';
   var isVid0=media.length&&(media[0].kind||'')==='video';
-  return '<div class="calchip bk'+postBucket(p)+'" data-open="'+p.channel+':'+p.id+'" title="'+esc(p.batch||('#'+p.id))+'">'
+  var dg=canDrag(p);
+  return '<div class="calchip bk'+postBucket(p)+(dg?' drg':'')+'" data-open="'+p.channel+':'+p.id+'" data-cid="'+p.id+'"'+(dg?' draggable="true"':'')+' title="'+esc(p.batch||('#'+p.id))+'">'
     +'<span class="cdot '+p.channel+'"></span>'
     +(u0?'<span class="cth" style="background-image:url(\''+esc(u0)+'\')">'+(isVid0?'<span class="play">▶</span>':'')+'</span>':'')
     +'<span class="ct"><b>'+esc(timeHM(p.scheduled_at)||'—')+'</b> '+esc(p.batch||('#'+p.id))+'</span>'
@@ -1125,9 +1168,44 @@ function calChip(p){
     +(editState(p)==='open'?'<span>✏️</span>':'')
     +'</div>';
 }
-function renderCal(){
-  var host=document.getElementById('calBody'); if(!host) return;
-  calInit();
+/* KÉO-THẢ đổi lịch: date='YYYY-MM-DD', hour=null (giữ giờ cũ) | 0–23 (đổi giờ, giữ phút). Optimistic + revert như saveTime. */
+function dropTime(id, date, hour){
+  var p=post(id); if(!p||SAVING[id]||!date) return;
+  if(!canDrag(p)) return;
+  var hm=vnHM(p.scheduled_at);
+  if(hour!=null) hm=('0'+hour).slice(-2)+hm.slice(2);
+  var iso=date+'T'+hm+':00+07:00', old=p.scheduled_at;
+  if(p.scheduled_at && new Date(iso).getTime()===Date.parse(p.scheduled_at)) return;
+  SAVING[id]=true;
+  p.scheduled_at=new Date(iso).toISOString();
+  reRenderFor(p); if(DETAIL) renderDetail();
+  api({action:'set_time', id:id, scheduled_at:iso}).then(function(r){
+    SAVING[id]=false;
+    if(r&&r.ok){ p.scheduled_at=r.scheduled_at; reRenderFor(p); if(DETAIL) renderDetail(); }
+    else { p.scheduled_at=old; reRenderFor(p); if(DETAIL) renderDetail(); alert('Không đổi được lịch: '+((r&&r.error)||'lỗi mạng')); }
+  }).catch(function(){ SAVING[id]=false; p.scheduled_at=old; reRenderFor(p); if(DETAIL) renderDetail(); alert('Không đổi được lịch: lỗi mạng'); });
+}
+/* đầu lịch dùng chung: ‹ tiêu-đề › + Hôm nay + 4 chế độ + chú giải */
+function calHead(title){
+  function mb(m,l){ return '<button class="fchip'+(CALMODE===m?' on':'')+'" data-calmode="'+m+'">'+l+'</button>'; }
+  return '<div class="calhead">'
+    +'<button class="tbtn" data-calnav="prev">‹</button>'
+    +'<span class="calttl">'+esc(title)+'</span>'
+    +'<button class="tbtn" data-calnav="next">›</button>'
+    +'<button class="tbtn" data-calnav="today">Hôm nay</button>'
+    +'<span class="calmodes">'+mb('day','Ngày')+mb('week','Tuần')+mb('month','Tháng')+mb('year','Năm')+'</span>'
+    +'<span class="callegend">'
+      +'<span><i style="background:#fdf3e0;border:1px solid #e8cf9f"></i>chờ duyệt·lịch</span>'
+      +'<span><i style="background:#e7f3f1;border:1px solid #bfe0da"></i>sắp lên</span>'
+      +'<span><i style="background:#fdeaea;border:1px solid #f3cfca"></i>lỗi·sửa·bỏ</span>'
+      +'<span><i style="background:#f1f1ec;border:1px solid #ddddd2"></i>đã đăng</span>'
+      +'<span><span class="cdot ig" style="display:inline-block;vertical-align:-1px"></span> IG</span>'
+      +'<span><span class="cdot fb" style="display:inline-block;vertical-align:-1px"></span> FB</span>'
+      +'<span>📣 thanh = ads</span><span>🖐 giữ-kéo thẻ = đổi lịch</span>'
+    +'</span></div>';
+}
+/* ---- THÁNG: lưới tuần, thanh ads trên đầu mỗi tuần, ô ngày = drop target (đổi ngày GIỮ giờ) ---- */
+function renderCalMonth(){
   var y=CAL.y, m=CAL.m;
   var startOff=(new Date(Date.UTC(y,m-1,1)).getUTCDay()+6)%7;   // Thứ 2 = cột đầu
   var dim=new Date(Date.UTC(y,m,0)).getUTCDate();
@@ -1136,21 +1214,8 @@ function renderCal(){
   var byDay={}, unsched=[];
   DATA.posts.forEach(function(p){ var d=vnDateStr(p.scheduled_at); if(!d){ unsched.push(p); return; } (byDay[d]=byDay[d]||[]).push(p); });
   for(var k in byDay) byDay[k].sort(byTime);
-  var bars=DATA.ads.map(function(a){ var s=a.start_date||vnDateStr(a.created_at), e=a.end_date||s; return {a:a, s:s, e:(e<s?s:e)}; });
-  var h='<div class="calhead">'
-    +'<button class="tbtn" data-calnav="prev">‹</button>'
-    +'<span class="calttl">Tháng '+m+'/'+y+'</span>'
-    +'<button class="tbtn" data-calnav="next">›</button>'
-    +'<button class="tbtn" data-calnav="today">Hôm nay</button>'
-    +'<span class="callegend">'
-      +'<span><i style="background:#fdf3e0;border:1px solid #e8cf9f"></i>chờ duyệt·lịch</span>'
-      +'<span><i style="background:#e7f3f1;border:1px solid #bfe0da"></i>sắp lên</span>'
-      +'<span><i style="background:#fdeaea;border:1px solid #f3cfca"></i>lỗi·sửa·bỏ</span>'
-      +'<span><i style="background:#f1f1ec;border:1px solid #ddddd2"></i>đã đăng</span>'
-      +'<span><span class="cdot ig" style="display:inline-block;vertical-align:-1px"></span> IG</span>'
-      +'<span><span class="cdot fb" style="display:inline-block;vertical-align:-1px"></span> FB</span>'
-      +'<span>📣 thanh trên = ads</span>'
-    +'</span></div>';
+  var bars=adRanges();
+  var h=calHead('Tháng '+m+'/'+y);
   if(unsched.length) h+='<div class="sech">🕓 Chưa hẹn giờ ('+unsched.length+')</div><div class="calun">'+unsched.map(calChip).join('')+'</div>';
   h+='<div class="calscroll"><div class="calgrid">';
   h+='<div class="caldow"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div>';
@@ -1171,13 +1236,87 @@ function renderCal(){
     h+='</div><div class="wkcells">';
     for(var i=0;i<7;i++){
       var iso=wIso[i], inM=(wDays[i]>=1 && wDays[i]<=dim);
-      h+='<div class="calcell'+(inM?'':' om')+(iso===todayIso?' today':'')+'"><span class="dnum">'+(+iso.slice(8,10))+'</span>'
+      h+='<div class="calcell'+(inM?'':' om')+(iso===todayIso?' today':'')+'" data-date="'+iso+'"><span class="dnum">'+(+iso.slice(8,10))+'</span>'
         +(byDay[iso]||[]).map(calChip).join('')
         +'</div>';
     }
     h+='</div></div>';
   }
   h+='</div></div>';
+  return h;
+}
+/* ---- TUẦN (nDays=7, từ T2) / NGÀY (nDays=1): lưới giờ 0–23, ô giờ = drop target (đổi ngày + GIỜ, giữ phút) ---- */
+function renderCalGrid(nDays){
+  var start;
+  if(nDays===7){ var dow=(new Date(Date.UTC(CAL.y,CAL.m-1,CAL.d)).getUTCDay()+6)%7; start=ymd(CAL.y,CAL.m,CAL.d-dow); }
+  else start=ymd(CAL.y,CAL.m,CAL.d);
+  var sy=+start.slice(0,4), sm=+start.slice(5,7), sd=+start.slice(8,10);
+  var days=[]; for(var i=0;i<nDays;i++) days.push(ymd(sy,sm,sd+i));
+  var todayIso=vnDateStr(DATA.now)||'';
+  var byDay={}; DATA.posts.forEach(function(p){ var d=vnDateStr(p.scheduled_at); if(d) (byDay[d]=byDay[d]||[]).push(p); });
+  var bars=adRanges().filter(function(bx){ return bx.s && bx.s<=days[nDays-1] && bx.e>=days[0]; });
+  var title = nDays===1 ? dayLabel(days[0]+'T12:00:00+07:00')
+    : (+days[0].slice(8,10))+'/'+(+days[0].slice(5,7))+' – '+(+days[6].slice(8,10))+'/'+(+days[6].slice(5,7))+'/'+days[6].slice(0,4);
+  var cols='grid-template-columns:44px repeat('+nDays+',1fr)';
+  var h=calHead(title);
+  h+='<div class="calscroll"><div'+(nDays===7?' class="calgrid"':'')+'>';
+  // hàng tiêu đề ngày
+  h+='<div class="hgrid hh" style="'+cols+'"><span></span>';
+  days.forEach(function(iso){ var wd=dayLabel(iso+'T12:00:00+07:00').split(',')[0];
+    h+='<span class="hdr'+(iso===todayIso?' tdy':'')+'">'+(+iso.slice(8,10))+'/'+(+iso.slice(5,7))+'<small> '+esc(wd)+'</small></span>'; });
+  h+='</div>';
+  // thanh ads (lệch 1 cột nhãn giờ)
+  if(bars.length){
+    h+='<div class="hgrid" style="'+cols+'">';
+    bars.forEach(function(bx,bi){
+      var c1=1, c2=nDays;
+      for(var i=0;i<nDays;i++){ if(days[i]===bx.s) c1=i+1; if(days[i]===bx.e) c2=i+1; }
+      if(bx.s<days[0]) c1=1; if(bx.e>days[nDays-1]) c2=nDays;
+      h+='<div class="adbar bk'+adBucket(bx.a)+'" data-open="ads:'+bx.a.id+'" style="grid-column:'+(c1+1)+'/'+(c2+2)+';grid-row:'+(bi+1)+'" title="'+esc(bx.a.name||'')+'">'
+        +(bx.s<days[0]?'‹ ':'')+'📣 '+esc(bx.a.name||('#'+bx.a.id))+(bx.e>days[nDays-1]?' ›':'')+'</div>';
+    });
+    h+='</div>';
+  }
+  // lưới giờ 0–23
+  for(var hh=0; hh<24; hh++){
+    h+='<div class="hgrid hr" style="'+cols+'"><span class="hlab">'+('0'+hh).slice(-2)+':00</span>';
+    days.forEach(function(iso){
+      var list=(byDay[iso]||[]).filter(function(p){ return vnHour(p.scheduled_at)===hh; }).sort(byTime);
+      h+='<div class="hourcell'+(iso===todayIso?' tdy':'')+'" data-date="'+iso+'" data-hour="'+hh+'">'+list.map(calChip).join('')+'</div>';
+    });
+    h+='</div>';
+  }
+  h+='</div></div>';
+  return h;
+}
+/* ---- NĂM: 12 tháng mini; ngày có bài = đậm; bấm ngày → chế độ Ngày; bấm tên tháng → chế độ Tháng ---- */
+function renderCalYear(){
+  var todayIso=vnDateStr(DATA.now)||'';
+  var cnt={}; DATA.posts.forEach(function(p){ var d=vnDateStr(p.scheduled_at); if(d) cnt[d]=(cnt[d]||0)+1; });
+  var h=calHead('Năm '+CAL.y);
+  h+='<div class="yeargrid">';
+  for(var m=1;m<=12;m++){
+    var startOff=(new Date(Date.UTC(CAL.y,m-1,1)).getUTCDay()+6)%7;
+    var dim=new Date(Date.UTC(CAL.y,m,0)).getUTCDate();
+    h+='<div class="ymon"><div class="ymt" data-gotomonth="'+m+'">Tháng '+m+' ›</div><div class="ymg">';
+    ['T2','T3','T4','T5','T6','T7','CN'].forEach(function(w){ h+='<span class="ymw">'+w+'</span>'; });
+    for(var i=0;i<startOff;i++) h+='<span></span>';
+    for(var d=1;d<=dim;d++){ var iso=ymd(CAL.y,m,d);
+      h+='<span class="ymd'+(cnt[iso]?' has':'')+(iso===todayIso?' tdy':'')+'" data-goto="'+iso+'" title="'+(cnt[iso]?cnt[iso]+' bài':'')+'">'+d+'</span>';
+    }
+    h+='</div></div>';
+  }
+  h+='</div>';
+  return h;
+}
+function renderCal(){
+  var host=document.getElementById('calBody'); if(!host) return;
+  calInit();
+  var h;
+  if(CALMODE==='year') h=renderCalYear();
+  else if(CALMODE==='week') h=renderCalGrid(7);
+  else if(CALMODE==='day') h=renderCalGrid(1);
+  else h=renderCalMonth();
   host.innerHTML=h;
 }
 
@@ -1234,6 +1373,9 @@ function wireBody(host){
     if((el=e.target.closest('[data-donesec]'))){ toggleDone(el.getAttribute('data-donesec')); return; }
     if((el=e.target.closest('[data-sort]'))){ toggleSort(el.getAttribute('data-sort')); return; }
     if((el=e.target.closest('[data-calnav]'))){ calNav(el.getAttribute('data-calnav')); return; }
+    if((el=e.target.closest('[data-calmode]'))){ setCalMode(el.getAttribute('data-calmode')); return; }
+    if((el=e.target.closest('[data-gotomonth]'))){ calInit(); CAL.m=+el.getAttribute('data-gotomonth'); CAL.d=1; setCalMode('month'); return; }
+    if((el=e.target.closest('[data-goto]'))){ var g=el.getAttribute('data-goto'); CAL={y:+g.slice(0,4), m:+g.slice(5,7), d:+g.slice(8,10)}; setCalMode('day'); return; }
     if((el=e.target.closest('[data-open]'))){ var op=el.getAttribute('data-open').split(':'); openDetail(op[0], +op[1]); return; }
     if((el=e.target.closest('[data-copy]'))){ var p=post(el.getAttribute('data-pid')); if(!p) return;
       copyText(el.getAttribute('data-copy')==='cap' ? (p.caption||'') : (p.first_comment_text||''), el); return; }
@@ -1250,11 +1392,21 @@ function wireBody(host){
       if(j.error){ if(p) p.owner_scheduled=!val; renderFB(); renderSummary(); alert('Lỗi lưu lịch: '+(j.error||'')); }
     });
   });
-  host.addEventListener('dragstart', function(e){ var pim=e.target.closest('.pimg[draggable=true]'); if(!pim) return;
+  host.addEventListener('dragstart', function(e){
+    var cc=e.target.closest('.calchip[draggable=true]');
+    if(cc){ CDRAG={id:+cc.getAttribute('data-cid')}; e.dataTransfer.effectAllowed='move'; cc.classList.add('drag'); return; }
+    var pim=e.target.closest('.pimg[draggable=true]'); if(!pim) return;
     DRAG={pid:+pim.getAttribute('data-pid'), i:+pim.getAttribute('data-i')}; e.dataTransfer.effectAllowed='move'; pim.classList.add('drag'); });
-  host.addEventListener('dragend', function(e){ var pim=e.target.closest('.pimg'); if(pim) pim.classList.remove('drag'); DRAG=null; });
-  host.addEventListener('dragover', function(e){ if(e.target.closest('.pimg')) e.preventDefault(); });
-  host.addEventListener('drop', function(e){ var tgt=e.target.closest('.pimg'); if(!tgt||!DRAG) return; e.preventDefault();
+  host.addEventListener('dragend', function(e){ var pim=e.target.closest('.pimg,.calchip'); if(pim) pim.classList.remove('drag'); DRAG=null; CDRAG=null; calClearDrop(); });
+  host.addEventListener('dragover', function(e){
+    if(CDRAG){ var cell=e.target.closest('.hourcell,.calcell'); if(cell){ e.preventDefault(); if(CDROPEL!==cell){ calClearDrop(); CDROPEL=cell; cell.classList.add('dropover'); } } return; }
+    if(e.target.closest('.pimg')) e.preventDefault(); });
+  host.addEventListener('drop', function(e){
+    if(CDRAG){ var cell=e.target.closest('.hourcell,.calcell'); calClearDrop();
+      if(cell){ e.preventDefault(); var hr=cell.getAttribute('data-hour');
+        dropTime(CDRAG.id, cell.getAttribute('data-date'), hr==null?null:+hr); }
+      CDRAG=null; return; }
+    var tgt=e.target.closest('.pimg'); if(!tgt||!DRAG) return; e.preventDefault();
     if(+tgt.getAttribute('data-pid')!==DRAG.pid){ DRAG=null; return; }   // chỉ đổi trong cùng 1 bài
     var to=+tgt.getAttribute('data-i'), from=DRAG.i, pid=DRAG.pid; DRAG=null;
     if(to===from) return;
@@ -1302,6 +1454,38 @@ function wireBody(host){
   }, {passive:false});
   host.addEventListener('touchend', function(){ tEnd(true); });
   host.addEventListener('touchcancel', function(){ tEnd(false); });
+
+  /* KÉO–THẢ CẢM ỨNG cho THẺ LỊCH (điện thoại): chạm-giữ ~0,2s "nhấc" thẻ → kéo tới ô ngày/giờ → thả = đổi lịch. */
+  var CT=null;
+  function ctEnd(commit){
+    if(!CT) return;
+    clearTimeout(CT.timer);
+    if(CT.el) CT.el.classList.remove('drag');
+    calClearDrop();
+    if(CT.active){ SWALLOW_CLICK=true; setTimeout(function(){ SWALLOW_CLICK=false; },350); }
+    var d=CT; CT=null;
+    if(commit && d.active && d.date) dropTime(d.id, d.date, d.hour);
+  }
+  host.addEventListener('touchstart', function(e){
+    if(e.touches.length!==1) return;
+    var c=e.target.closest('.calchip[draggable=true]'); if(!c) return;
+    var t=e.touches[0];
+    CT={id:+c.getAttribute('data-cid'), el:c, x:t.clientX, y:t.clientY, active:false, date:null, hour:null};
+    CT.timer=setTimeout(function(){ if(CT){ CT.active=true; c.classList.add('drag'); if(navigator.vibrate) navigator.vibrate(15); } }, 220);
+  }, {passive:true});
+  host.addEventListener('touchmove', function(e){
+    if(!CT) return;
+    var t=e.touches[0];
+    if(!CT.active){ if(Math.abs(t.clientX-CT.x)>10 || Math.abs(t.clientY-CT.y)>10){ clearTimeout(CT.timer); CT=null; } return; }
+    e.preventDefault();
+    var over=document.elementFromPoint(t.clientX, t.clientY);
+    var cell=over&&over.closest?over.closest('.hourcell,.calcell'):null;
+    if(CDROPEL!==cell) calClearDrop();
+    if(cell){ CDROPEL=cell; cell.classList.add('dropover'); CT.date=cell.getAttribute('data-date'); var hr=cell.getAttribute('data-hour'); CT.hour=(hr==null?null:+hr); }
+    else { CT.date=null; CT.hour=null; }
+  }, {passive:false});
+  host.addEventListener('touchend', function(){ ctEnd(true); });
+  host.addEventListener('touchcancel', function(){ ctEnd(false); });
 }
 
 /* DI TRÚ 1 LẦN: đẩy tick "đã lên lịch" FB cũ (localStorage máy NÀY) lên DB → union, KHÔNG xóa cái đã có.
