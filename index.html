@@ -1,4 +1,4 @@
-<!doctype html><!-- build: yeucau-xoa-bucket-fbquagio 2026-07-06 -->
+<!doctype html><!-- build: reel-thumb-lichdang-ngaytrongmuc 2026-07-06b -->
 <html lang="vi"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Êm Như Mây · Bảng điều khiển đăng bài</title>
@@ -106,7 +106,7 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 .tspace{flex:1}
 .tbtn{border:1px solid var(--line);background:var(--warm);color:var(--brown);border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .card.mini{display:flex;align-items:center;gap:10px;padding:8px 10px}
-.mthumb{width:52px;height:52px;flex:0 0 auto;border-radius:8px;background-color:#efe7da;background-size:cover;background-position:center;border:1px solid var(--line)}
+.mthumb{position:relative;overflow:hidden;width:52px;height:52px;flex:0 0 auto;border-radius:8px;background-color:#efe7da;background-size:cover;background-position:center;border:1px solid var(--line)}
 .minfo{flex:1;min-width:0}
 .minfo>div{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 .msub{font-size:11.5px;color:var(--muted);margin-top:3px}
@@ -198,6 +198,16 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 #lb{position:fixed;inset:0;background:rgba(25,18,12,.94);display:none;z-index:60;align-items:center;justify-content:center;flex-direction:column}
 #lb.on{display:flex}
 #lb img{max-width:94vw;max-height:82vh;border-radius:10px;box-shadow:0 6px 40px rgba(0,0,0,.5)}
+#lb video{max-width:94vw;max-height:82vh;border-radius:10px;box-shadow:0 6px 40px rgba(0,0,0,.5);background:#000}
+/* preview Reel (video) trong popup — khung 9:16 như IG/FB thật */
+.reelcov{position:relative;width:100%;max-width:240px;aspect-ratio:9/16;margin:0 auto;background-color:#111;background-size:cover;background-position:center;border-radius:6px;cursor:pointer}
+.reelcov .playbig{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.65)}
+/* đổi ngày giờ đăng */
+.schedrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;padding:9px 11px;background:var(--warm);border:1px solid var(--line);border-radius:10px;font-size:13px}
+.schedrow .lbl{font-weight:800;color:var(--brown)}
+.schedrow input[type=datetime-local]{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px;color:var(--brown);background:#fff;min-height:34px}
+.schedrow .sub{font-size:11.5px;color:var(--brown2);flex-basis:100%}
+.schedrow .tbtn{min-height:34px}
 #lb .lbx{color:#fff;font-size:14px;margin-top:12px;opacity:.85}
 #lb .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:34px;color:#fff;opacity:.7;padding:18px;cursor:pointer;user-select:none}
 #lb .prev{left:0}#lb .next{right:0}
@@ -266,8 +276,9 @@ header button{border:1px solid var(--line);background:var(--warm);color:var(--br
 <div id="lb" onclick="closeLB()">
   <span class="nav prev" onclick="event.stopPropagation();stepLB(-1)">‹</span>
   <img id="lbimg" src="" alt="">
+  <video id="lbvid" controls playsinline style="display:none" onclick="event.stopPropagation()"></video>
   <span class="nav next" onclick="event.stopPropagation();stepLB(1)">›</span>
-  <button class="dlbig" onclick="event.stopPropagation();dlLB()">⬇ Tải ảnh này</button>
+  <button class="dlbig" onclick="event.stopPropagation();dlLB()">⬇ Tải về</button>
   <div class="lbx">chạm nền để đóng · ‹ › chuyển ảnh</div>
 </div>
 
@@ -386,12 +397,16 @@ function dl(url){ var name=fname(url);
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
   }).catch(function(){ window.open(url,'_blank'); }); }
 
-/* ---- lightbox ---- */
+/* ---- lightbox (ảnh + VIDEO: url .mp4/.mov → thẻ <video> tự phát) ---- */
 var LBSETS={}, LBLIST=[], LBIDX=0;
-function openLB(key, idx){ LBLIST=LBSETS[key]||[]; LBIDX=idx;
-  document.getElementById('lbimg').src=LBLIST[LBIDX]||''; document.getElementById('lb').classList.add('on'); }
-function closeLB(){ document.getElementById('lb').classList.remove('on'); document.getElementById('lbimg').src=''; }
-function stepLB(d){ if(!LBLIST.length) return; LBIDX=(LBIDX+d+LBLIST.length)%LBLIST.length; document.getElementById('lbimg').src=LBLIST[LBIDX]; }
+function isVidUrl(u){ return /\.(mp4|mov|m4v|webm)(\?|$)/i.test(u||''); }
+function lbStopVid(){ var v=document.getElementById('lbvid'); try{ v.pause(); }catch(e){} v.removeAttribute('src'); try{ v.load(); }catch(e){} v.style.display='none'; }
+function lbShow(){ var u=LBLIST[LBIDX]||'', im=document.getElementById('lbimg'), v=document.getElementById('lbvid');
+  if(isVidUrl(u)){ im.style.display='none'; im.src=''; v.style.display=''; v.src=u; try{ v.play().catch(function(){}); }catch(e){} }
+  else { lbStopVid(); im.style.display=''; im.src=u; } }
+function openLB(key, idx){ LBLIST=LBSETS[key]||[]; LBIDX=idx; lbShow(); document.getElementById('lb').classList.add('on'); }
+function closeLB(){ lbStopVid(); document.getElementById('lb').classList.remove('on'); document.getElementById('lbimg').src=''; }
+function stepLB(d){ if(!LBLIST.length) return; LBIDX=(LBIDX+d+LBLIST.length)%LBLIST.length; lbShow(); }
 function dlLB(){ if(LBLIST[LBIDX]) dl(LBLIST[LBIDX]); }
 
 /* ---- popup chi tiết bài (modal) — thẻ gọn click mở ra, đủ chức năng ---- */
@@ -533,7 +548,7 @@ function thumbStrip(list, key){
   var h='<div class="imgs">';
   list.forEach(function(m,i){
     var img=m.thumb_url||m.url;
-    if((m.kind||'')==='video') h+='<a class="th" href="'+esc(m.url)+'" target="_blank" rel="noopener"><img src="'+esc(img)+'" loading="lazy" alt=""><span class="play">▶</span></a>';
+    if((m.kind||'')==='video') h+='<a class="th" href="javascript:void(0)" onclick="openLB(\''+key+'\','+i+')"><img src="'+esc(img)+'" loading="lazy" alt=""><span class="play">▶</span></a>';
     else h+='<a class="th" href="javascript:void(0)" onclick="openLB(\''+key+'\','+i+')"><img src="'+esc(img)+'" loading="lazy" alt=""></a>';
   });
   return h+'</div>';
@@ -574,10 +589,12 @@ function toolbar(ch, opts, total){
 /* thẻ ngang rút gọn — dùng chung IG/FB */
 function miniCard(p){
   var media=p.media||[]; var u0=media.length?(media[0].thumb_url||media[0].url):'';
+  var isVid0=media.length&&(media[0].kind||'')==='video';
+  var kindLbl=(p.format==='story'?'story':(p.format==='reel'?'🎬 reel':'bài ảnh'));
   return '<div class="card mini clk" data-open="'+p.channel+':'+p.id+'">'
-    +(u0?'<div class="mthumb" style="background-image:url(\''+esc(u0)+'\')"></div>':'<div class="mthumb"></div>')
+    +(u0?'<div class="mthumb" style="background-image:url(\''+esc(u0)+'\')">'+(isVid0?'<span class="play" style="font-size:16px">▶</span>':'')+'</div>':'<div class="mthumb"></div>')
     +'<div class="minfo"><div><span class="bcode">'+esc(p.batch||('#'+p.id))+'</span> '+cardChip(p)+(cardLate(p)?' <span class="latebadge">⚠️ trễ</span>':'')+editBadge(p)+'</div>'
-    +'<div class="msub">'+esc(timeHM(p.scheduled_at))+' · '+media.length+' ảnh · '+(p.format==='story'?'story':'bài ảnh')+'</div></div>'
+    +'<div class="msub">'+esc(timeHM(p.scheduled_at))+' · '+media.length+' '+(p.format==='reel'?'clip':'ảnh')+' · '+kindLbl+'</div></div>'
     + actRow(p)
     +'</div>';
 }
@@ -585,9 +602,46 @@ function miniCard(p){
 function canEditMedia(p){ return EDITABLE_UI.indexOf(p.status)>=0 && IMG_FMT.indexOf(p.format)>=0; }
 function reRenderFor(p){ if(p.channel==='ig') renderIG(); else renderFB(); }
 
+/* ---- đổi NGÀY GIỜ đăng (Gin chỉnh → IG máy tự đăng theo giờ mới; FB = mốc hẹn đăng tay) ---- */
+function vnInput(iso){ if(!iso) return ''; var s=new Date(iso).toLocaleString('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'}); return s.slice(0,16).replace(' ','T'); }
+function schedRow(p){
+  if(p.status==='published'||p.status==='publishing') return '';
+  return '<div class="schedrow"><span class="lbl">🕒 Lịch đăng:</span>'
+    +'<input type="datetime-local" id="sched'+p.id+'" value="'+vnInput(p.scheduled_at)+'">'
+    +'<button class="tbtn" onclick="saveTime('+p.id+')">💾 Lưu giờ</button>'
+    +'<span class="sub">'+(p.channel==='ig'?'giờ VN — máy tự đăng theo giờ này (sau khi Duyệt)':'giờ VN — mốc hẹn cho đăng tay')+'</span></div>';
+}
+function saveTime(id){
+  var el=document.getElementById('sched'+id);
+  if(!el||!el.value){ alert('Chọn ngày giờ trước đã.'); return; }
+  var p=post(id); if(!p||SAVING[id]) return;
+  var iso=el.value+':00+07:00', old=p.scheduled_at;
+  SAVING[id]=true;
+  p.scheduled_at=new Date(iso).toISOString();
+  reRenderFor(p); if(DETAIL) renderDetail();
+  api({action:'set_time', id:id, scheduled_at:iso}).then(function(r){
+    SAVING[id]=false;
+    if(r&&r.ok){ p.scheduled_at=r.scheduled_at; reRenderFor(p); if(DETAIL) renderDetail(); }
+    else { p.scheduled_at=old; reRenderFor(p); if(DETAIL) renderDetail(); alert('Không đổi được giờ: '+((r&&r.error)||'lỗi mạng')); }
+  }).catch(function(){ SAVING[id]=false; p.scheduled_at=old; reRenderFor(p); if(DETAIL) renderDetail(); alert('Không đổi được giờ: lỗi mạng'); });
+}
+
 /* preview WYSIWYG: bọc thành THẺ BÀI ĐĂNG THẬT (chrome IG/FB) để duyệt như đang xem feed */
 function feedPreview(p){
   var media=p.media||[];
+  // Reel (video): khung 9:16 + thumbnail như IG/FB thật; chạm → lightbox phát video
+  if(p.format==='reel' && media.length){
+    var kv='fv'+p.id; LBSETS[kv]=media.map(function(m){ return m.url; });
+    var m0=media[0], thv=m0.thumb_url||'';
+    var fullv=(p.caption||''), capV=esc(fullv.slice(0,150))+(fullv.length>150?'…':'');
+    var who=p.channel==='ig'?'em.nhumay':'EM NHU MAY';
+    return '<div class="fv"><div class="fvlab">'+(p.channel==='ig'?'📱 Xem như Reel Instagram':'📘 Xem như Reel Facebook')+' · chạm để phát</div>'
+      + '<div class="pcard '+(p.channel==='ig'?'ig':'fb')+'">'
+      + '<div class="phdr"><div class="pav"></div><div class="pnm">'+who+'</div><div class="pmore">⋯</div></div>'
+      + '<div class="reelcov" data-lb="'+kv+'" data-lbi="0"'+(thv?' style="background-image:url(\''+esc(thv)+'\')"':'')+'><span class="playbig">▶</span></div>'
+      + '<div class="pcap"><b>'+who+'</b> '+capV+'</div>'
+      + '</div></div>';
+  }
   if(!media.length || IMG_FMT.indexOf(p.format)<0) return '';
   var key='fv'+p.id; LBSETS[key]=media.map(function(m){ return m.url; });
   var full=(p.caption||''), capShort=esc(full.slice(0,150))+(full.length>150?'…':'');
@@ -777,6 +831,7 @@ function igDetail(p){                                       // popup = đầy đ
     + '<span class="tm">'+esc(fmtTime(p.scheduled_at))+'</span>'
     + chip(p.status)
     + '<span class="id">#'+p.id+'</span></div>'
+    + schedRow(p)
     + feedPreview(p)
     + (canEditMedia(p) ? mediaEditor(p,'ig'+p.id,false) : thumbStrip(p.media,'ig'+p.id))
     + '<div class="cap">'+esc(p.caption)+'</div><button class="more" onclick="toggleCap(this)">xem hết ▾</button>';
@@ -806,9 +861,9 @@ function renderPosts(ch){
   h+='<div class="sech">'+bucketLabel(2)+' ('+g[2].length+')</div>';
   h+= g[2].length ? byDayCards(g[2], card) : '<div class="empty">Trống.</div>';
   h+='<div class="sech">'+bucketLabel(3)+' ('+g[3].length+')</div>';
-  h+= g[3].length ? g[3].map(card).join('') : '<div class="empty">Trống.</div>';
+  h+= g[3].length ? byDayCards(g[3], card) : '<div class="empty">Trống.</div>';
   h+='<div class="sech">'+bucketLabel(4)+' ('+g[4].length+')'+(g[4].length?'<button class="pubtoggle" data-pub="'+ch+'">'+(SHOW_PUB[ch]?'ẩn ▴':'hiện ▾')+'</button>':'')+'</div>';
-  if(SHOW_PUB[ch]) h+= g[4].length ? g[4].slice(0,50).map(card).join('') : '<div class="empty">Chưa có.</div>';
+  if(SHOW_PUB[ch]) h+= g[4].length ? byDayCards(g[4].slice(0,50), card) : '<div class="empty">Chưa có.</div>';
   host.innerHTML=h; measureCollages(); if(DETAIL) renderDetail();
 }
 function renderIG(){ renderPosts('ig'); }
@@ -826,6 +881,7 @@ function fbDetail(p){                                       // popup = đầy đ
     + '<span class="ftitle">'+esc(p.batch||('#'+p.id))+'</span>'
     + (!done&&isLate(p)?'<span class="latebadge">⚠️ trễ</span>':'')
     + '<label class="chk"><input type="checkbox" data-done="'+p.id+'"'+(done?' checked':'')+'>đã lên lịch</label></div>';
+  h+= schedRow(p);
   if(isStory){
     h+='<div class="note"><b>Chỉ đăng ẢNH — không caption.</b> Story bản có chữ (Thương hiệu render). Tải ảnh rồi đăng Tin trên Facebook.</div>';
   } else {
