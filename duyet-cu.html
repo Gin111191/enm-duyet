@@ -54,7 +54,7 @@ h2{font-size:15px;margin:20px 4px 8px}
 </main>
 <div id="lb" onclick="closeLB()"><span class="nav prev" onclick="event.stopPropagation();stepLB(-1)">‹</span><img id="lbimg" src="" alt=""><span class="nav next" onclick="event.stopPropagation();stepLB(1)">›</span><div class="lbx">chạm để đóng · ‹ › chuyển ảnh</div></div>
 <script>
-var API = 'https://hxucribafqcxsybovgmc.supabase.co/functions/v1/autopub-review';
+var API = 'https://jezaiuvaqrglvggccyrw.supabase.co/functions/v1/autopub-review';
 var PIN = sessionStorage.getItem('enm_pin') || '';
 var LBL = {pending:'⏳ chờ duyệt', approved:'✅ đã duyệt — chờ tới giờ', fb_scheduled:'🕒 đã vào lịch Meta', publishing:'🚀 đang đăng…', published:'📤 đã đăng', failed:'⚠️ lỗi', rejected:'❌ đã bỏ', needs_edit:'✏️ chờ sửa', created_paused:'💤 nháp TẮT đã dựng', activated_by_owner:'▶️ Gin đã bật'};
 var FMT = {photo:'Ảnh', multi_photo:'Nhiều ảnh', reel:'Reel', story:'Story'};
